@@ -221,4 +221,5 @@ cython_debug/
 out
 gen
 
-/db/*.db
+budget.db
+
