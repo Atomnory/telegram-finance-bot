@@ -6,10 +6,11 @@ import re
 import db
 import datetime
 from statistic import _get_today_formatted      # maybe should move this func to another module(service/date)
+from decimal import *
 
 
 class Message(NamedTuple):
-    amount: int
+    amount: Decimal
     category_text: str
     payment_type_text: Optional[str]
     additional_info_text: Optional[str]
@@ -24,7 +25,7 @@ class Message(NamedTuple):
 #     raw_text TEXT)
 class Expense(NamedTuple):
     id: Optional[int]
-    amount: int
+    amount: Decimal
     category_id: int
     payment_type: str
     additional_info: Optional[str]
@@ -86,7 +87,7 @@ def add_expense(raw_message: str) -> Expense:
         else:
             raise NotCorrectMessage('This category is needed additional info')
 
-    db.insert_to_db('expense', {'amount': parsed_message.amount,
+    db.insert_to_db('expense', {'amount': float(parsed_message.amount),
                                 'time_creating': _get_today_formatted(),
                                 'category_id': category.id,
                                 'payment_type': payment_type_result,
@@ -119,30 +120,33 @@ def delete_expense(row_id: int) -> None:
 
 
 def _parse_message(raw_message: str) -> Message:
-    # regexp_result = re.match(r"([\d]+) (.*)", raw_message)
     regexp_result = re.match(
-        r"(?P<amount>\d+) *"
-        r"(?P<category>(?!cash|card)[A-Za-z]+ *(?!cash|card)[A-Za-z]*) *"
-        r"(?P<payment>cash|card)? *"
-        r"(?P<info>.+)?",
+        r"(?P<amount>\d+[,.]?\d*) *"        # Float number with ',' or '.' (or int) for amount
+        r"(?P<category>(?!cash|card)[A-ZА-ЯЁa-zа-яё]+ *(?!cash|card)[A-ZА-ЯЁa-zа-яё]*) *"   # Max two words for category
+        r"(?P<payment>cash|card)? *"        # Only 'cash' or 'card' for payment
+        r"(?P<info>.+)?",                   # Any signs, any length for info
         raw_message)
-    # if not regexp_result or not regexp_result.group(0) or not regexp_result.group(1) or not regexp_result.group(2):
-    #     raise NotCorrectMessage()
+
     if not regexp_result or not regexp_result.group(0) or not regexp_result.group('amount') \
             or not regexp_result.group('category'):
         raise NotCorrectMessage('Message format: 1000 <category_name>')
 
-    amount = regexp_result.group('amount').replace(' ', '')
-    category_text = regexp_result.group('category').strip()      # .capitalize()
+    # Usually dot sign '.' will be using to convert 'str' to 'float'
+    # But comma sign ',' may be used in float number too and it will not raise any exception
+    swap_float_sign = re.sub(',', '.', regexp_result.group('amount'), count=1)  # Replace first occurrence of ',' to '.'
+    decim = Decimal(swap_float_sign.replace(' ', ''))        # Delete possibly redundant spaces and convert to Decimal
+    amount = decim.quantize(Decimal('1.01'), rounding=ROUND_HALF_UP)      # Round .005 on the end to .01
+
+    category_text = regexp_result.group('category').strip().lower()
 
     payment_type = None
     additional_info = None
     if regexp_result.group('payment'):
-        payment_type = regexp_result.group('payment').strip().lower()
+        payment_type = regexp_result.group('payment').strip()
     if regexp_result.group('info'):
         additional_info = regexp_result.group('info')
 
-    result = Message(amount=int(amount),
+    result = Message(amount=amount,
                      category_text=category_text,
                      payment_type_text=payment_type,
                      additional_info_text=additional_info)

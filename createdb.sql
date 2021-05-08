@@ -29,7 +29,7 @@ CREATE TABLE fixed_price(
 
 CREATE TABLE expense(
     id INTEGER PRIMARY KEY,
-    amount INTEGER,
+    amount DECIMAL(17,2),
     time_creating DATETIME,
     category_id INTEGER,
     payment_type VARCHAR(4),

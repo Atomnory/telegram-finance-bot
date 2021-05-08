@@ -46,7 +46,7 @@ class Categories:
         for index, category in enumerate(categories):       # TODO: try without enumerate
             aliases_list = category['aliases'].split(',')       # TODO: test .split('')
             aliases_list = list(filter(None, map(str.strip, aliases_list)))
-            aliases_list.append(category['category_name'])
+            aliases_list.append(category['category_name'].lower())
             categories_result.append(Category(id=category['id'],
                                               name=category['category_name'],
                                               is_cash_accepted=category['is_cash_accepted'],
@@ -83,7 +83,7 @@ class Categories:
             if category.name == 'Other':
                 category_other = category
             for alias in category.aliases:
-                if category_name in alias:
+                if category_name == alias:      # searching with 'in' have an issue when category_name = 'Bus'
                     result = category
         if not result:
             result = category_other
