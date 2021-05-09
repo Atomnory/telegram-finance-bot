@@ -49,7 +49,7 @@ INSERT INTO budget(type_of_category_id, weekly_limit, monthly_limit)
 VALUES (1, 1000, 5000);
 
 INSERT INTO category(id, category_name, is_cash_accepted, is_card_accepted, is_additional_info_needed, aliases, type_id)
-VALUES (1, 'Food', true, true, false, 'еда, проудкты', 1),
+VALUES (1, 'Food', true, true, false, 'еда, продукты, магаз', 1),
     (2, 'Drinking water', true, false, false, 'питьевая вода', 1),
     (3, 'Bus', true, false, false, 'автобус', 2),
     (4, 'Trolleybus', true, false, false, 'троллейбус', 2),
@@ -60,20 +60,20 @@ VALUES (1, 'Food', true, true, false, 'еда, проудкты', 1),
     (9, 'Heating', false, true, false, 'тепло', 3),
     (10, 'Gas', false, true, false, 'газ', 3),
     (11, 'Major overhaul', false, true, false, 'кап ремонт', 3),
-    (12, 'Management company', false, true, false, 'ук, квартал', 3),
+    (12, 'Management company', false, true, false, 'ук', 3),
     (13, 'Simcard', false, true, false, 'телефон, симка, связь, мегафон', 3),
     (14, 'Internet', false, true, false, 'интернет, инет', 3),
     (15, 'Mobile banking', false, true, false, 'сбер, банкинг', 3),
     (16, 'Clothes', true, true, true, 'одежда, трусы', 4),
-    (17, 'Footwear', true, true, true, 'обувь, кросы', 4),
-    (18, 'Electronic devices', true, true, true, 'приборы, техника', 4),
-    (19, 'Games', true, true, true, 'игры, игра', 4),
-    (20, 'Books', true, true, true, 'книги, книга', 4),
-    (21, 'Learning', true, true, true, 'обучение, курсы', 4),
-    (22, 'Entertainment', true, true, true, 'развлечение, развлечения, кутёж, кутеж, туса, балдёж, балдеж, кафе, мак', 5),
-    (23, 'Money transfer', false, true, true, 'перевод', 5),
+    (17, 'Footwear', true, true, true, 'обувь, кросы, boots', 4),
+    (18, 'Electronic devices', true, true, true, 'приборы, техника, device, electronic', 4),
+    (19, 'Games', true, true, true, 'игры, игра, game', 4),
+    (20, 'Books', true, true, true, 'книги, книга, book', 4),
+    (21, 'Learning', true, true, true, 'обучение, курсы, course, courses', 4),
+    (22, 'Entertainment', true, true, true, 'развлечение, развлечения, кутёж, кутеж, туса, балдёж, балдеж, кафе, мак, cafe, kfc, ресторан, рестик', 5),
+    (23, 'Money transfer', false, true, true, 'перевод, transfer', 5),
     (24, 'Taxi', true, true, false, 'такси, личный извозчик', 5),
-    (25, 'Other', true, true, true, 'другое, прекол, приколдес, хз', 5);
+    (25, 'Other', true, true, true, 'другое, прекол, приколдес, хз, остальное', 5);
 
 INSERT INTO fixed_price(category_id, price)
 VALUES (2, 40),

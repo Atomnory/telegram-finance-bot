@@ -43,7 +43,7 @@ async def last_expenses(message: types.Message):
         return
 
     last_ten_rows = [
-        f"{expense_obj.amount} rub "
+        f"{expense_obj.amount} \u20BD "
         f"for '{expense_obj.get_category_name()}' category. "
         f"Click /delete{expense_obj.id} to delete it."
         for expense_obj in last_ten
@@ -62,7 +62,7 @@ async def add_expense(message: types.Message):
             as e:
         await message.answer(str(e))
         return
-    answer_message = f"Expense was added for {new_expense.amount} rub " \
+    answer_message = f"Expense was added for {new_expense.amount} \u20BD " \
                      f"to '{new_expense.get_category_name()}' category. \n\n " \
                      f"To see all expenses: /expenses"
     await message.answer(answer_message)
