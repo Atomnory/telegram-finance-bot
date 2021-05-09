@@ -1,22 +1,22 @@
 import os
 from typing import Dict, List
+import psycopg2
 
-import sqlite3
-
-con = sqlite3.connect(os.path.join('db', 'budget.db'))
+con = psycopg2.connect(database=os.getenv('DB_POSTGRES_TB_NAME'),
+                       user=os.getenv('DB_POSTGRES_USER'),
+                       password=os.getenv('DB_POSTGRES_USER_PASSWORD'),
+                       host=os.getenv('DB_POSTGRES_HOST'),
+                       port=os.getenv('DB_POSTGRES_PORT'))
 cur = con.cursor()
 
 
 def insert_to_db(table: str, column_values: Dict) -> None:
     columns = ', '.join(column_values.keys())
-    values = [tuple(column_values.values())]
-    placeholders = ', '.join('?' * len(column_values.keys()))
-    cur.executemany(
-        f'INSERT INTO {table}'
-        f'({columns})'
-        f'VALUES ({placeholders})',
-        values
-    )
+    val = list(column_values.values())
+
+    cur.executemany(f"INSERT INTO {table} ({columns}) "
+                    f"VALUES(%s, %s, %s, %s, %s, %s);",
+                    (val, ))
     con.commit()
 
 
@@ -47,13 +47,13 @@ def _init_db():
     """ Initialize database by createdb.sql settings. """
     with open('createdb.sql', 'r') as f:
         sql = f.read()
-    cur.executescript(sql)
+    cur.execute(sql)
     con.commit()
 
 
 def check_db_exists():
     """ Check database exists. If not exist initialize one."""
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='expense'")
+    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='expense'")
     table_exists = cur.fetchall()
     if not table_exists:
         _init_db()

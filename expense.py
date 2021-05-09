@@ -5,7 +5,7 @@ from exceptions import NotCorrectMessage
 import re
 import db
 import datetime
-from statistic import _get_today_formatted      # maybe should move this func to another module(service/date)
+from statistic import _get_today      # maybe should move this func to another module(service/date)
 from decimal import *
 
 
@@ -55,6 +55,9 @@ def add_expense(raw_message: str) -> Expense:
     parsed_message = _parse_message(raw_message)
     category = Categories().get_category_by_name(parsed_message.category_text)
 
+    if parsed_message.amount <= 0:
+        raise NotCorrectMessage('Amount should be more than 0')
+
     # TODO: move if below to another module
     if category.is_cash_accepted and not category.is_card_accepted:     # CASH only
         if not parsed_message.payment_type_text:
@@ -87,8 +90,8 @@ def add_expense(raw_message: str) -> Expense:
         else:
             raise NotCorrectMessage('This category is needed additional info')
 
-    db.insert_to_db('expense', {'amount': float(parsed_message.amount),
-                                'time_creating': _get_today_formatted(),
+    db.insert_to_db('expense', {'amount': parsed_message.amount,
+                                'time_creating': _get_today(),
                                 'category_id': category.id,
                                 'payment_type': payment_type_result,
                                 'additional_info': additional_info,
