@@ -1,4 +1,5 @@
 Telegram бот для учёта расходов. Все расходы разделены на 25 категорий и 5 надкатегорий.
+
 Modified and extended version of original bot: https://github.com/alexey-goloburdin/telegram-finance-bot
 
 
@@ -22,6 +23,6 @@ Modified and extended version of original bot: https://github.com/alexey-golobur
 
 
 Roadmap:
-    Add statistics.
-    Add budget limits.
-    Add input expenses with Telegram custom keyboard buttons.
+   * Add statistics.
+   * Add budget limits.
+   * Add input expenses with Telegram custom keyboard buttons.
