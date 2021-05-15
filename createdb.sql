@@ -39,7 +39,7 @@ CREATE TABLE expense(
 );
 
 INSERT INTO type_of_category(id, type_name)
-VALUES (1, 'Grocery'),
+VALUES (1, 'Groceries'),
     (2, 'Transport'),
     (3, 'Bill'),
     (4, 'Product'),
