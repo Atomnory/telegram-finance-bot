@@ -1,11 +1,12 @@
 from aiogram import types
 from aiogram.dispatcher.handler import CancelHandler
 from aiogram.dispatcher.middlewares import BaseMiddleware
+from typing import Optional
 
 
 class AccessMiddleware(BaseMiddleware):
-    def __init__(self, access_id: int):
-        self.access_id = access_id
+    def __init__(self, access_id: Optional[int]):
+        self.access_id = int(access_id)
         super().__init__()
 
     async def on_process_message(self, message: types.Message, _):

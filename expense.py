@@ -30,9 +30,10 @@ class Expense(NamedTuple):
     payment_type: str
     additional_info: Optional[str]
 
-    def get_category_name(self) -> str:
-        category = Categories().get_category_by_id(self.category_id)
-        return category.name
+
+def get_category_name(category_id: int) -> str:
+    category = Categories().get_category_by_id(category_id)
+    return category.name
 
 
 # TODO: add class Message(NamedTuple)       -- Message handling
@@ -103,19 +104,25 @@ def add_expense(raw_message: str) -> Expense:
                    additional_info=additional_info)
 
 
-def last_ten() -> List[Expense]:
+def last_expenses(limit: int = 10) -> str:
+    """Return last expense with limit(default 10)"""
     cur = db.get_cursor()
-    cur.execute("SELECT e.id, e.amount, c.id, e.payment_type, e.additional_info "
-                "FROM expense e LEFT JOIN category c ON c.id=e.category_id "
-                "ORDER BY e.time_creating DESC LIMIT 10")
-    rows = cur.fetchall()
-    last_ten_expenses = [Expense(id=row[0],
-                                 amount=row[1],
-                                 category_id=row[2],
-                                 payment_type=row[3],
-                                 additional_info=row[4])
-                         for row in rows]
-    return last_ten_expenses
+
+    cur.execute(f"SELECT e.id, e.amount, c.id, e.payment_type, e.additional_info "
+                f"FROM expense e LEFT JOIN category c ON c.id=e.category_id "
+                f"ORDER BY e.time_creating DESC LIMIT {limit}")
+    result = cur.fetchall()
+    if not result[0]:
+        return "There's none any expense"
+
+    last_rows = []
+    for row in result:
+        last_rows.append(f"{row[1]} \u20BD "
+                         f"for '{get_category_name(row[2])}' category. "
+                         f"Click /delete{row[0]} to delete it.")
+
+    answer_message = "Last expenses: \n\n* " + "\n\n* ".join(last_rows)
+    return answer_message
 
 
 def delete_expense(row_id: int) -> None:
@@ -132,7 +139,7 @@ def _parse_message(raw_message: str) -> Message:
 
     if not regexp_result or not regexp_result.group(0) or not regexp_result.group('amount') \
             or not regexp_result.group('category'):
-        raise NotCorrectMessage('Message format: 1000 <category_name>')
+        raise NotCorrectMessage('Message format: <amount> <category_name> <payment_type> <additional_info>')
 
     # Usually dot sign '.' will be using to convert 'str' to 'float'
     # But comma sign ',' may be used in float number too and it will not raise any exception
