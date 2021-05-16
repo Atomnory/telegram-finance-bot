@@ -1,6 +1,6 @@
 from typing import Dict, List, NamedTuple
 import db
-from exceptions import CategoryDoesNotExist
+from services.exceptions import CategoryDoesNotExist
 
 
 # category(id INTEGER,
@@ -87,17 +87,4 @@ class Categories:
                     result = category
         if not result:
             result = category_other
-        return result
-
-    def get_category_by_id(self, category_id: int) -> Category:
-        """
-            If Category with 'category_id' was found return that Category.
-            Else raise an Exception.
-        """
-        result = None
-        for category in self._categories:
-            if category.id == category_id:
-                result = category
-        if not result:
-            raise CategoryDoesNotExist('Table has not any category with that id')
         return result

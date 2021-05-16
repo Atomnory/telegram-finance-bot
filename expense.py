@@ -1,11 +1,10 @@
-from typing import List, Dict, NamedTuple, Optional
+from typing import NamedTuple, Optional
 from category import Categories
-from type_of_category import TypesOfCategory
-from exceptions import NotCorrectMessage
+from services.exceptions import NotCorrectMessage
 import re
 import db
-import datetime
-from statistic import _get_today      # maybe should move this func to another module(service/date)
+from services.service import get_today      # maybe should move this func to another module(service/date)
+from services.service import get_category_name_by_id
 from decimal import *
 
 
@@ -31,31 +30,26 @@ class Expense(NamedTuple):
     additional_info: Optional[str]
 
 
-def get_category_name(category_id: int) -> str:
-    category = Categories().get_category_by_id(category_id)
-    return category.name
-
-
 # TODO: add class Message(NamedTuple)       -- Message handling
 # TODO: add class Expense(NamedTuple)       -- Expense handling
 # TODO: add def add_expense()               -- Expense handling
 # TODO: add def last_ten()                  -- Expense handling
 # TODO: add def delete_expense()            -- Expense handling
 # TODO: add def _parse_message()            -- Message handling
-# TODO: add def _get_now_formatted()        -- Date handling
 # TODO: add def _get_now()                  -- Date handling
 # TODO: add def _get_weekly_budget_limit()  -- Db data fetching
 # TODO: add def _get_monthly_budget_limit() -- Db data fetching
 # TODO: add def get_fixed_price()           -- Db data fetching
 
 
-def add_expense(raw_message: str) -> Expense:
+def add_expense(raw_message: str) -> str:
     payment_type_result = ''
     additional_info = None
 
     parsed_message = _parse_message(raw_message)
     category = Categories().get_category_by_name(parsed_message.category_text)
 
+    # TODO: move if below to another module
     if parsed_message.amount <= 0:
         raise NotCorrectMessage('Amount should be more than 0')
 
@@ -92,25 +86,26 @@ def add_expense(raw_message: str) -> Expense:
             raise NotCorrectMessage('This category is needed additional info')
 
     db.insert_to_db('expense', {'amount': parsed_message.amount,
-                                'time_creating': _get_today(),
+                                'time_creating': get_today(),
                                 'category_id': category.id,
                                 'payment_type': payment_type_result,
                                 'additional_info': additional_info,
                                 'raw_text': raw_message})
-    return Expense(id=None,
-                   amount=parsed_message.amount,
-                   category_id=category.id,
-                   payment_type=payment_type_result,
-                   additional_info=additional_info)
+
+    return (f"Expense was added by {parsed_message.amount} \u20BD "
+            f"to '{get_category_name_by_id(category.id)}' category "
+            f"with payment by {payment_type_result}. \n\n"
+            f"To see all expenses: /expenses")
 
 
 def last_expenses(limit: int = 10) -> str:
-    """Return last expense with limit(default 10)"""
+    """ Return last expense with limit (default 10). """
     cur = db.get_cursor()
 
-    cur.execute(f"SELECT e.id, e.amount, c.id, e.payment_type, e.additional_info "
-                f"FROM expense e LEFT JOIN category c ON c.id=e.category_id "
-                f"ORDER BY e.time_creating DESC LIMIT {limit}")
+    cur.execute("SELECT expense.id, expense.amount, category.category_name, expense.payment_type "
+                "FROM expense "
+                "JOIN category ON category.id=expense.category_id "
+                "ORDER BY expense.time_creating DESC LIMIT %s;", (limit, ))
     result = cur.fetchall()
     if not result[0]:
         return "There's none any expense"
@@ -118,10 +113,11 @@ def last_expenses(limit: int = 10) -> str:
     last_rows = []
     for row in result:
         last_rows.append(f"{row[1]} \u20BD "
-                         f"for '{get_category_name(row[2])}' category. "
-                         f"Click /delete{row[0]} to delete it.")
+                         f"to '{row[2]}' category "
+                         f"with payment by {row[3]}. \n"
+                         f"   Click /delete{row[0]} to delete.")
 
-    answer_message = "Last expenses: \n\n* " + "\n\n* ".join(last_rows)
+    answer_message = "Last expenses: \n\n# " + "\n\n# ".join(last_rows)
     return answer_message
 
 

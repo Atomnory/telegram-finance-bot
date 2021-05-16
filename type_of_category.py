@@ -1,6 +1,6 @@
 from typing import List, NamedTuple
 import db
-from exceptions import TypeOfCategoryDoesNotExist
+from services.exceptions import TypeOfCategoryDoesNotExist
 
 
 # type_of_category(id INTEGER, type_name VARCHAR)
@@ -42,17 +42,4 @@ class TypesOfCategory:
                 result = type_of_category
         if not result:
             result = type_other
-        return result
-
-    def get_type_of_category_by_id(self, type_category_id: int) -> TypeOfCategory:
-        """
-            If TypeOfCategory with 'type_category_id' was found return that TypeOfCategory.
-            Else raise an Exception.
-        """
-        result = None
-        for type_of_category in self._types:
-            if type_of_category.id == type_category_id:
-                result = type_of_category
-        if not result:
-            raise TypeOfCategoryDoesNotExist('That type of category does not exist')
         return result

@@ -1,12 +1,12 @@
-import os
 from typing import Dict, List
 import psycopg2
+from services import config
 
-con = psycopg2.connect(database=os.getenv('DB_POSTGRES_TB_NAME'),
-                       user=os.getenv('DB_POSTGRES_USER'),
-                       password=os.getenv('DB_POSTGRES_USER_PASSWORD'),
-                       host=os.getenv('DB_POSTGRES_HOST'),
-                       port=os.getenv('DB_POSTGRES_PORT'))
+con = psycopg2.connect(database=config.database,
+                       user=config.user,
+                       password=config.password,
+                       host=config.host,
+                       port=config.port)
 cur = con.cursor()
 
 
@@ -22,7 +22,7 @@ def insert_to_db(table: str, column_values: Dict) -> None:
 
 def fetchall_from_db(table: str, columns: List[str]) -> List[Dict]:
     columns_joined = ', '.join(columns)
-    cur.execute(f'SELECT {columns_joined} FROM {table}')
+    cur.execute(f'SELECT {columns_joined} FROM {table};')
     rows = cur.fetchall()
     result = []
     for row in rows:
@@ -35,7 +35,7 @@ def fetchall_from_db(table: str, columns: List[str]) -> List[Dict]:
 
 def delete_from_db(table: str, row_id: int) -> None:
     row_id = int(row_id)  # TODO: ??? int -> int
-    cur.execute(f'DELETE FROM {table} WHERE id={row_id}')
+    cur.execute(f'DELETE FROM {table} WHERE id={row_id};')
     con.commit()
 
 
@@ -53,7 +53,7 @@ def _init_db():
 
 def check_db_exists():
     """ Check database exists. If not exist initialize one."""
-    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='expense'")
+    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='expense';")
     table_exists = cur.fetchall()
     if not table_exists:
         _init_db()
