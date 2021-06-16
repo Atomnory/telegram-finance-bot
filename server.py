@@ -1,11 +1,12 @@
 import logging
+from middleware import AccessMiddleware
 
 from aiogram import Bot, Dispatcher, executor, types
 from services import config, exceptions, service
-from middleware import AccessMiddleware
 import expense
 import statistic
-
+# TODO: create handler funcs to adding expense with keyboard only
+# TODO: change all navigation to keyboard
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.API_TOKEN)
@@ -13,13 +14,52 @@ dp = Dispatcher(bot)
 dp.middleware.setup(AccessMiddleware(config.ACCESS_USER_ID))
 
 
+# @dp.message_handler(commands=['wow'])
+# async def reply_keyboard_test(message: types.Message):
+#     key = [['1 uno', '2 uno', '3 uno'],
+#            [types.KeyboardButton('/start'), types.KeyboardButton('/categories'), types.KeyboardButton('/expenses')],
+#            [types.KeyboardButton('/start'), '/start', types.KeyboardButton('/wow'), '/wow']]
+#     keyboard = types.ReplyKeyboardMarkup(keyboard=key, one_time_keyboard=True)
+#
+#     rep = types.ReplyKeyboardMarkup()
+#     rep.row()
+#     rep.insert(types.KeyboardButton('ins1'))
+#     rep.insert(types.KeyboardButton('ins2'))
+#     rep.row()
+#     rep.add(types.KeyboardButton('add1'), types.KeyboardButton('add2'), types.KeyboardButton('add3'))
+#     rep.row(types.KeyboardButton('row1'), types.KeyboardButton('row2'), types.KeyboardButton('row3'), types.KeyboardButton('row4'))
+#     rep.insert('insert text')
+#     rep.row(types.KeyboardButton('row1'), types.KeyboardButton('row2'), types.KeyboardButton('row3'))
+#     rep.add(types.KeyboardButton('add1'), types.KeyboardButton('add2'), types.KeyboardButton('add3'))
+#     rep.insert(types.KeyboardButton('ins1'))
+#     rep.insert(types.KeyboardButton('ins2'))
+#     rep.add(types.KeyboardButton('add1'), types.KeyboardButton('add2'), types.KeyboardButton('add3'))
+#     rep.insert(types.KeyboardButton('ins3'))
+#     rep.insert((types.KeyboardButton('ins4')))
+#
+#     await message.answer('!', reply_markup=rep)
+
+
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
     """ This handler will be called when user sends '/start' or '/help' command. """
-    answer_message = ("Hola\n"
-                      "I'm Bot\n"
-                      "/day /expenses /categories")
-    await message.answer(answer_message)
+    answer_message = ("What do yo want to do?\n"
+                      "Add expenses with /add")
+    start_menu = types.ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                types.KeyboardButton('/categories'),
+                types.KeyboardButton('/types')
+            ],
+            [
+                types.KeyboardButton('/expenses'),
+                types.KeyboardButton('/day'),
+                types.KeyboardButton('/add')
+            ]
+        ],
+        one_time_keyboard=True
+    )
+    await message.answer(answer_message, reply_markup=start_menu)
 
 
 @dp.message_handler(commands=['categories'])
