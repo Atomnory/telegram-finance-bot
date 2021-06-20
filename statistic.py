@@ -437,7 +437,6 @@ def get_year_statistic_by_type() -> str:
 
 def _get_quantize_zero_decimal() -> Decimal:
     """
-        Return Decimal with two trailing zeros because all 'amount's from db have two precision numbers
-        and keep that style will be better.
+        Using for display '0' with trailing zeros '0.00'
     """
     return Decimal(0.00).quantize(Decimal('1.11'))

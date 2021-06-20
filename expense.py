@@ -15,21 +15,6 @@ class Message(NamedTuple):
     additional_info_text: Optional[str]
 
 
-# expense( id INTEGER,
-#     amount INTEGER,
-#     time_creating DATETIME,
-#     category_id INTEGER,
-#     payment_type VARCHAR(4),
-#     additional_info VARCHAR(255),
-#     raw_text TEXT)
-class Expense(NamedTuple):
-    id: Optional[int]
-    amount: Decimal
-    category_id: int
-    payment_type: str
-    additional_info: Optional[str]
-
-
 # TODO: add class Message(NamedTuple)       -- Message handling
 # TODO: add class Expense(NamedTuple)       -- Expense handling
 # TODO: add def add_expense()               -- Expense handling
