@@ -1,7 +1,7 @@
 
 
 class NotCorrectMessage(Exception):
-    """Incorrect message sended to bot, unavailable to unparsing"""
+    """Incorrect message send to bot, unavailable to unparsing"""
     pass
 
 
@@ -21,3 +21,9 @@ class CategoryDoesNotExist(Exception):
     """
     pass
 
+
+class FixedPriceDoesNotExist(Exception):
+    """
+        Try to get access to object of FixedPrice that doesn't exist.
+    """
+    pass

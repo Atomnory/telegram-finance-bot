@@ -120,7 +120,7 @@ def _parse_message(raw_message: str) -> Message:
 
     if not regexp_result or not regexp_result.group(0) or not regexp_result.group('amount') \
             or not regexp_result.group('category'):
-        raise NotCorrectMessage('Message format: <amount> <category_name> <payment_type> <additional_info>')
+        raise NotCorrectMessage('Expense format: <amount> <category_name> <payment_type> <additional_info>')
 
     # Usually dot sign '.' will be using to convert 'str' to 'float'
     # But comma sign ',' may be used in float number too and it will not raise any exception

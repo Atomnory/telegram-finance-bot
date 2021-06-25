@@ -28,18 +28,29 @@ class TypesOfCategory:
     def get_all_types_of_category(self) -> List[TypeOfCategory]:
         return self._types
 
-    def get_type_of_category_by_name(self, type_category_name: str) -> TypeOfCategory:
+    def get_type_of_category_by_name(self, type_name: str) -> TypeOfCategory:
         """
-            If TypeOfCategory with 'type_category_name' was found return that TypeOfCategory.
-            Else return 'Other' TypeOfCategory.
+            If TypeOfCategory with 'type_name' was found return that TypeOfCategory.
+            Else raise an Exception.
         """
         result = None
-        type_other = None
-        for type_of_category in self._types:
-            if type_of_category.type_name == 'Other':
-                type_other = type_of_category
-            if type_of_category.type_name == type_category_name:
-                result = type_of_category
+        for type_category in self._types:
+            if type_category.type_name == type_name:
+                result = type_category
         if not result:
-            result = type_other
+            raise TypeOfCategoryDoesNotExist('Table has not any type with that name')
         return result
+
+    def get_type_of_category_by_name_or_other(self, type_name: str) -> TypeOfCategory:
+        """
+            If TypeOfCategory with 'type_name' was found return that TypeOfCategory.
+            Else return 'Other' TypeOfCategory.
+        """
+        try:
+            result = self.get_type_of_category_by_name(type_name)
+        except TypeOfCategoryDoesNotExist:
+            for type_category in self._types:
+                if type_category.type_name == 'Other':
+                    result = type_category
+        finally:
+            return result

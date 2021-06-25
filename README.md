@@ -23,6 +23,4 @@ Modified and extended version of original bot: https://github.com/alexey-golobur
 
 
 Roadmap:
-   * Add statistics.
-   * Add budget limits.
-   * Add input expenses with Telegram custom keyboard buttons.
+   * Finish reply keyboard buttons.

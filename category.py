@@ -1,6 +1,7 @@
 from typing import Dict, List, NamedTuple
 import db
 from services.exceptions import CategoryDoesNotExist
+from decimal import *
 
 
 # category(id INTEGER,
@@ -18,6 +19,11 @@ class Category(NamedTuple):
     is_additional_info_needed: bool
     aliases: List[str]
     type_id: int
+#
+#
+# class FixedPrice(NamedTuple):
+#     id: int
+#     price: int
 
 
 class Categories:
@@ -85,6 +91,28 @@ class Categories:
             for alias in category.aliases:
                 if category_name == alias:      # searching with 'in' have an issue when category_name = 'Bus'
                     result = category
+            if category_name == category.name:
+                result = category
         if not result:
             result = category_other
         return result
+#
+#
+# class FixedPrices:
+#     def __init__(self):
+#         self._prices = self._load_prices()
+#
+#     def _load_prices(self) -> List[FixedPrice]:
+#         """
+#             Fetch all rows from 'fixed_price' table.
+#             Convert them from List[Dict] to List[FixedPrice(NamedTuple)].
+#         """
+#         prices = db.fetchall_from_db('fixed_price', ['category_id', 'price'])
+#         prices_result = []
+#         for row in prices:
+#             prices_result.append(FixedPrice(id=row['category_id'],
+#                                             price=row['price']))
+#         return prices_result
+#
+#     def get_all_prices(self) -> List[FixedPrice]:
+#         return self._prices
