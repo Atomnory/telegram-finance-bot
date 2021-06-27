@@ -1,6 +1,6 @@
 from loader import dp
 from aiogram.types import Message
-from statistic import get_year_sum_statistic, get_year_statistic_by_category, get_year_statistic_by_type
+from services.statistic import get_year_sum_statistic, get_year_statistic_by_category, get_year_statistic_by_type
 
 
 @dp.message_handler(commands=['year'])

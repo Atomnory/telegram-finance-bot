@@ -1,7 +1,7 @@
 from loader import dp
 from aiogram.types import Message
-from statistic import get_month_sum_statistic, get_month_statistic_by_category
-from statistic import get_month_statistic_by_type, get_detail_month_statistic
+from services.statistic import get_month_sum_statistic, get_month_statistic_by_category
+from services.statistic import get_month_statistic_by_type, get_detail_month_statistic
 
 
 @dp.message_handler(commands=['month'])

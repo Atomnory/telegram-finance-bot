@@ -1,7 +1,7 @@
 from loader import dp
 from aiogram.types import Message
-from services import exceptions
-import expense
+from utils import exceptions
+from services import expense
 
 
 @dp.message_handler(lambda message: message.text.startswith('/delete'))

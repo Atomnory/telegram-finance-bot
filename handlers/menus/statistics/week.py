@@ -1,7 +1,7 @@
 from loader import dp
 from aiogram.types import Message
-from statistic import get_week_sum_statistic, get_week_statistic_by_category
-from statistic import get_week_statistic_by_type, get_detail_week_statistic
+from services.statistic import get_week_sum_statistic, get_week_statistic_by_category
+from services.statistic import get_week_statistic_by_type, get_detail_week_statistic
 
 
 @dp.message_handler(commands=['week'])

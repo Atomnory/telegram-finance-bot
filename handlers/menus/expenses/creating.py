@@ -4,22 +4,23 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
 from decimal import *
 from .state import CreateExpense
-from services.service import get_list_all_types, get_type_id_by_type_name, get_categories_name_by_type_id, get_type_name_by_id, get_fixed_price_categories_name, get_category_id_by_name, get_category_price_by_id, get_today
+from services.service import get_list_all_types, get_type_id_by_type_name, get_categories_name_by_type_id
+from services.service import get_type_name_by_id, get_fixed_price_categories_name, get_category_id_by_category_name
+from services.service import get_category_price_by_id, get_today
 from services.service import is_card_accepted, is_cash_accepted, is_additional_info_needed
-from services.exceptions import CategoryDoesNotExist
-import db
+from services.expense import insert_expense
+from utils.exceptions import CategoryDoesNotExist
 # TODO: add Back handler and possibility to repeat step
-types_names = get_list_all_types()      # TODO: need no global variable
 
 
 @dp.message_handler(Text(equals=['Add']))
 async def start_add_expense(message: Message):
     answer_message = 'Choose type of expense: '
 
-    reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    for name in types_names:
+    reply_keyboard = ReplyKeyboardMarkup()
+    for name in get_list_all_types():
         reply_keyboard.add(name)
-    reply_keyboard.add('Cancel')
+    reply_keyboard.row('Cancel')
     await message.answer(answer_message, reply_markup=reply_keyboard)
     await CreateExpense.waiting_for_type.set()
 
@@ -33,18 +34,18 @@ async def cancel_add_expense(message: Message, state: FSMContext):
 async def start_attempt_from_confirmation(message: Message):
     answer_message = 'Choose type of expense: '
 
-    reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    for name in types_names:
+    reply_keyboard = ReplyKeyboardMarkup()
+    for name in get_list_all_types():
         reply_keyboard.add(name)
-    reply_keyboard.add('Cancel')
+    reply_keyboard.row('Cancel')
     await message.answer(answer_message, reply_markup=reply_keyboard)
     await CreateExpense.waiting_for_type.set()
 
 
 @dp.message_handler(state=CreateExpense.waiting_for_type)
 async def choose_type(message: Message, state: FSMContext):
-    user_type = message.text.strip()        # TODO: test without strip
-    if user_type in types_names:
+    user_type = message.text
+    if user_type in get_list_all_types():
         type_id = get_type_id_by_type_name(user_type)
         types_categories_list = get_categories_name_by_type_id(type_id)
 
@@ -154,7 +155,7 @@ async def adding_additional_info(message: Message, state: FSMContext):
     category_name = data.get('category')
 
     if category_name in get_fixed_price_categories_name():
-        category_id = get_category_id_by_name(category_name)
+        category_id = get_category_id_by_category_name(category_name)
         fixed_price = get_category_price_by_id(category_id)
         decimal_fixed_price = Decimal(fixed_price).quantize(Decimal('1.11'), rounding=ROUND_HALF_UP)
         async with state.proxy() as data:
@@ -210,14 +211,14 @@ async def finish_add_expense(message: Message, state: FSMContext):
     payment = data.get('payment')
     additional_info = data.get('additional_info')
     amount = data.get('amount')
-    raw_message = ' '.join([type_name, category_name, str(amount), payment, additional_info])
+    raw_message = ' '.join([str(amount), type_name, category_name,  payment, additional_info])
 
-    db.insert_to_db('expense', {'amount': amount,
-                                'time_creating': get_today(),
-                                'category_id': get_category_id_by_name(category_name),
-                                'payment_type': payment,
-                                'additional_info': additional_info,
-                                'raw_text': raw_message})
+    insert_expense(amount=amount,
+                   date=get_today(),
+                   category_id=get_category_id_by_category_name(category_name),
+                   payment=payment,
+                   add_info=additional_info,
+                   raw_text=raw_message)
 
     await state.finish()
     answer_message = 'Expense was added. ' \

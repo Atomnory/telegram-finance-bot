@@ -1,11 +1,10 @@
 from typing import NamedTuple, Optional
-from category import Categories
-from services.exceptions import NotCorrectMessage
+from utils.exceptions import NotCorrectMessage
 import re
-import db
-from services.service import get_today      # maybe should move this func to another module(service/date)
-from services.service import get_category_name_by_id
+from services.service import get_today, get_category_by_name
+from datetime import datetime
 from decimal import *
+from models import Category, Expense
 
 
 class Message(NamedTuple):
@@ -15,45 +14,33 @@ class Message(NamedTuple):
     additional_info_text: Optional[str]
 
 
-# TODO: add class Message(NamedTuple)       -- Message handling
-# TODO: add class Expense(NamedTuple)       -- Expense handling
-# TODO: add def add_expense()               -- Expense handling
-# TODO: add def last_ten()                  -- Expense handling
-# TODO: add def delete_expense()            -- Expense handling
-# TODO: add def _parse_message()            -- Message handling
-# TODO: add def _get_now()                  -- Date handling
-# TODO: add def _get_weekly_budget_limit()  -- Db data fetching
-# TODO: add def _get_monthly_budget_limit() -- Db data fetching
-# TODO: add def get_fixed_price()           -- Db data fetching
-
-
 def add_expense(raw_message: str) -> str:
     payment_type_result = ''
     additional_info = None
 
     parsed_message = _parse_message(raw_message)
-    category = Categories().get_category_by_name(parsed_message.category_text)
+    category_obj = get_category_by_name(parsed_message.category_text)
 
     # TODO: move if below to another module
     if parsed_message.amount <= 0:
         raise NotCorrectMessage('Amount should be more than 0')
 
     # TODO: move if below to another module
-    if category.is_cash_accepted and not category.is_card_accepted:     # CASH only
+    if category_obj.is_cash_accepted and not category_obj.is_card_accepted:     # CASH only
         if not parsed_message.payment_type_text:
             payment_type_result = 'cash'
         elif parsed_message.payment_type_text == 'cash':
             payment_type_result = 'cash'
         else:
             raise NotCorrectMessage('This category only Cash is accepted')
-    elif not category.is_cash_accepted and category.is_card_accepted:   # CARD only
+    elif not category_obj.is_cash_accepted and category_obj.is_card_accepted:   # CARD only
         if not parsed_message.payment_type_text:
             payment_type_result = 'card'
         elif parsed_message.payment_type_text == 'card':
             payment_type_result = 'card'
         else:
             raise NotCorrectMessage('This category only Card is accepted')
-    elif category.is_cash_accepted and category.is_card_accepted:       # BOTH
+    elif category_obj.is_cash_accepted and category_obj.is_card_accepted:       # BOTH
         if not parsed_message.payment_type_text:
             raise NotCorrectMessage('You should choose type of payment')
         elif parsed_message.payment_type_text == 'cash':
@@ -64,50 +51,42 @@ def add_expense(raw_message: str) -> str:
             raise NotCorrectMessage("Payment type only may be 'cash' or 'card'")
 
     # TODO: move if below to another module
-    if category.is_additional_info_needed:
+    if category_obj.is_additional_info_needed:
         if parsed_message.additional_info_text:
             additional_info = parsed_message.additional_info_text
         else:
             raise NotCorrectMessage('This category is needed additional info')
 
-    db.insert_to_db('expense', {'amount': parsed_message.amount,
-                                'time_creating': get_today(),
-                                'category_id': category.id,
-                                'payment_type': payment_type_result,
-                                'additional_info': additional_info,
-                                'raw_text': raw_message})
+    insert_expense(amount=parsed_message.amount,
+                   date=get_today(),
+                   category_id=category_obj.id,
+                   payment=payment_type_result,
+                   add_info=additional_info,
+                   raw_text=raw_message)
 
-    return (f"Expense was added by {parsed_message.amount} \u20BD "
-            f"to '{get_category_name_by_id(category.id)}' category "
-            f"with payment by {payment_type_result}. \n\n"
-            f"To see all expenses: /expenses")
+    answer_message = (f"Expense was added by {parsed_message.amount} \u20BD "
+                      f"to '{category_obj.name}' category "
+                      f"with payment by {payment_type_result}. \n\n"
+                      f"To see all expenses: /expenses")
+    return answer_message
 
 
 def last_expenses(limit: int = 10) -> str:
     """ Return last expense with limit (default 10). """
-    cur = db.get_cursor()
-
-    cur.execute("SELECT expense.id, expense.amount, category.category_name, expense.payment_type "
-                "FROM expense "
-                "JOIN category ON category.id=expense.category_id "
-                "ORDER BY expense.time_creating DESC LIMIT %s;", (limit, ))
-    result = cur.fetchall()
-    if not result[0]:
-        return "There's none any expense"
-
+    expenses_query = (Expense
+                      .select(Expense.id, Expense.amount, Category.name, Expense.payment_type)
+                      .join(Category, on=(Expense.category_id == Category.id))
+                      .order_by(Expense.id.desc())
+                      .limit(limit))
     last_rows = []
-    for row in result:
-        last_rows.append(f"{row[1]} \u20BD "
-                         f"to '{row[2]}' category "
-                         f"with payment by {row[3]}. \n"
-                         f"   Click /delete{row[0]} to delete.")
+    for row in expenses_query:
+        last_rows.append(f"{row.amount} \u20BD "
+                         f"to '{row.category_id.name}' category "
+                         f"with payment by {row.payment_type}. \n"
+                         f"   Click /delete{row.id} to delete.")
 
     answer_message = "Last expenses: \n\n# " + "\n\n# ".join(last_rows)
     return answer_message
-
-
-def delete_expense(row_id: int) -> None:
-    db.delete_from_db('expense', row_id)
 
 
 def _parse_message(raw_message: str) -> Message:
@@ -124,11 +103,11 @@ def _parse_message(raw_message: str) -> Message:
 
     # Usually dot sign '.' will be using to convert 'str' to 'float'
     # But comma sign ',' may be used in float number too and it will not raise any exception
-    swap_float_sign = re.sub(',', '.', regexp_result.group('amount'), count=1)  # Replace first occurrence of ',' to '.'
+    swap_float_sign = re.sub(',', '..', regexp_result.group('amount'), count=1)  # Replace first occurrence of ',' to '.'
     decim = Decimal(swap_float_sign.replace(' ', ''))        # Delete possibly redundant spaces and convert to Decimal
     amount = decim.quantize(Decimal('1.01'), rounding=ROUND_HALF_UP)      # Round .005 on the end to .01
 
-    category_text = regexp_result.group('category').strip().lower()
+    category_text = regexp_result.group('category').strip()
 
     payment_type = None
     additional_info = None
@@ -145,3 +124,18 @@ def _parse_message(raw_message: str) -> Message:
     return result
 
 
+def insert_expense(*, amount: Decimal, date: datetime, category_id: int, payment: str, add_info: str, raw_text: str)\
+        -> None:
+    """ Insert expense to database. """
+    Expense.create(amount=amount,
+                   time_creating=date,
+                   category_id=category_id,
+                   payment_type=payment,
+                   additional_info=add_info,
+                   raw_text=raw_text)
+
+
+def delete_expense(expense_id: int) -> None:
+    """ Delete expense from database by expense id. """
+    expense_to_delete = Expense.get_by_id(expense_id)
+    expense_to_delete.delete_instance()

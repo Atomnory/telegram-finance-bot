@@ -1,6 +1,6 @@
 from loader import dp
 from aiogram.types import Message
-from statistic import get_today_sum_statistic, get_today_statistic_by_category, get_today_statistic_by_type
+from services.statistic import get_today_sum_statistic, get_today_statistic_by_category, get_today_statistic_by_type
 
 
 @dp.message_handler(commands=['day'])
