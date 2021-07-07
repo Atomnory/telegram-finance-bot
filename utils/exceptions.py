@@ -27,3 +27,10 @@ class FixedPriceDoesNotExist(Exception):
         Try to get access to object of FixedPrice that doesn't exist.
     """
     pass
+
+
+class QueryIsEmpty(Exception):
+    """
+        Selecting query return None.
+    """
+    pass

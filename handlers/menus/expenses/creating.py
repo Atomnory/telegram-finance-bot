@@ -6,7 +6,7 @@ from decimal import *
 from .state import CreateExpense
 from services.service import get_list_all_types, get_type_id_by_type_name, get_categories_name_by_type_id
 from services.service import get_type_name_by_id, get_fixed_price_categories_name, get_category_id_by_category_name
-from services.service import get_category_price_by_id, get_today
+from services.service import get_category_price_by_id, get_today_now
 from services.service import is_card_accepted, is_cash_accepted, is_additional_info_needed
 from services.expense import insert_expense
 from utils.exceptions import CategoryDoesNotExist
@@ -214,7 +214,7 @@ async def finish_add_expense(message: Message, state: FSMContext):
     raw_message = ' '.join([str(amount), type_name, category_name,  payment, additional_info])
 
     insert_expense(amount=amount,
-                   date=get_today(),
+                   date=get_today_now(),
                    category_id=get_category_id_by_category_name(category_name),
                    payment=payment,
                    add_info=additional_info,

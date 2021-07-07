@@ -4,7 +4,7 @@ from models import TypeofCategory, Category, FixedPrice
 from typing import List
 
 
-def get_today() -> datetime.datetime:
+def get_today_now() -> datetime.datetime:
     """ Get today date and now time with Moscow timezone. """
     msc = timezone('Europe/Moscow')
     today = datetime.datetime.now(msc)

@@ -1,13 +1,15 @@
-from models import TypeofCategory, Budget, Category, Expense
 from playhouse.postgres_ext import fn
 from decimal import Decimal
-from services.service import get_today
-from datetime import datetime
+from datetime import date
+from typing import List
+from models import TypeofCategory, Budget, Category, Expense
+from services.service import get_today_now
+from utils.exceptions import QueryIsEmpty
 
 
 def get_today_sum_statistic() -> str:
     """ Get statistic of sum today expenses. """
-    today = get_today().date()
+    today = _get_today_truncated_to_date()
     expense_sum_query = (Expense
                          .select(fn.SUM(Expense.amount).alias('sum'))
                          .where(Expense.time_creating.truncate('day') == today))
@@ -35,7 +37,7 @@ def get_today_sum_statistic() -> str:
 
 def get_today_statistic_by_category() -> str:
     """ Get statistic of today expenses grouped by category and payment type. """
-    today = get_today().date()
+    today = _get_today_truncated_to_date()
     stat_category_query = (Expense
                            .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
                            .join(Category)
@@ -61,7 +63,7 @@ def get_today_statistic_by_category() -> str:
 
 def get_today_statistic_by_type() -> str:
     """ Get statistic of today expenses grouped by type of category and payment type. """
-    today = get_today().date()
+    today = _get_today_truncated_to_date()
     stat_type_query = (Expense
                        .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
                        .join(Category)
@@ -88,8 +90,7 @@ def get_today_statistic_by_type() -> str:
 
 def get_week_sum_statistic() -> str:
     """ Get statistic of this ISO week expenses. """
-    today = get_today()
-    today_iso_week = datetime.fromisocalendar(year=today.isocalendar()[0], week=today.isocalendar()[1], day=1)
+    today_iso_week = _get_today_truncated_to_week()
 
     expense_sum_query = (Expense
                          .select(fn.SUM(Expense.amount).alias('sum'))
@@ -121,8 +122,7 @@ def get_week_sum_statistic() -> str:
 
 def get_week_statistic_by_category() -> str:
     """ Get statistic of this ISO week expenses grouped by category and payment type. """
-    today = get_today()
-    today_iso_week = datetime.fromisocalendar(year=today.isocalendar()[0], week=today.isocalendar()[1], day=1)
+    today_iso_week = _get_today_truncated_to_week()
 
     expense_category_query = (Expense
                               .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
@@ -149,8 +149,7 @@ def get_week_statistic_by_category() -> str:
 
 def get_week_statistic_by_type() -> str:
     """ Get statistic of this ISO week expenses grouped by type of category and payment type. """
-    today = get_today()
-    today_iso_week = datetime.fromisocalendar(year=today.isocalendar()[0], week=today.isocalendar()[1], day=1)
+    today_iso_week = _get_today_truncated_to_week()
 
     expense_type_query = (Expense
                         .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
@@ -178,38 +177,13 @@ def get_week_statistic_by_type() -> str:
 
 def get_detail_week_statistic() -> str:
     """ Get detail statistic of this ISO week expenses. Displays only expenses which should have additional_info. """
-    today = get_today()
-    today_iso_week = datetime.fromisocalendar(year=today.isocalendar()[0], week=today.isocalendar()[1], day=1)
-
-    expense_detail_query = (Expense
-                            .select(fn.SUM(Expense.amount).alias('sum'),
-                                    Category.name, Expense.payment_type, Expense.additional_info)
-                            .join(Category)
-                            .where((Expense.time_creating.truncate('week') == today_iso_week)
-                                   & (Category.is_additional_info_needed == True))
-                            .group_by(Expense.category_id, Category.name, Expense.payment_type, Expense.additional_info)
-                            .order_by(Expense.category_id))
-
-    if not expense_detail_query:
-        return "There's none such expense in this week"
-
-    rows = []
-    for row in expense_detail_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.name}' category "
-                    f"with payment by {row.payment_type}, "
-                    f"describing: {row.additional_info}. ")
-
-    answer_message = "Detail this week expenses: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple week statistic: /week \n"
-                       "Detail month statistic: /month_detail")
-    return answer_message
+    today_iso_week = _get_today_truncated_to_week()
+    return try_get_detail_statistic('week', today_iso_week)
 
 
 def get_month_sum_statistic() -> str:
     """ Get statistic of this month expenses. """
-    today = get_today()
-    today_month = datetime(year=today.year, month=today.month, day=1)
+    today_month = _get_today_truncated_to_month()
 
     expense_sum_query = (Expense
                          .select(fn.SUM(Expense.amount).alias('sum'))
@@ -241,8 +215,7 @@ def get_month_sum_statistic() -> str:
 
 def get_month_statistic_by_category() -> str:
     """ Get statistic of this month expenses grouped by category and payment type. """
-    today = get_today()
-    today_month = datetime(year=today.year, month=today.month, day=1)
+    today_month = _get_today_truncated_to_month()
 
     expense_category_query = (Expense
                               .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
@@ -269,8 +242,7 @@ def get_month_statistic_by_category() -> str:
 
 def get_month_statistic_by_type() -> str:
     """ Get statistic of this month expenses grouped by type of category and payment type. """
-    today = get_today()
-    today_month = datetime(year=today.year, month=today.month, day=1)
+    today_month = _get_today_truncated_to_month()
 
     expense_type_query = (Expense
                           .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
@@ -298,38 +270,13 @@ def get_month_statistic_by_type() -> str:
 
 def get_detail_month_statistic() -> str:
     """ Get detail statistic of this month expenses. Displays only expenses which should have additional_info. """
-    today = get_today()
-    today_month = datetime(year=today.year, month=today.month, day=1)
-
-    expense_detail_query = (Expense
-                            .select(fn.SUM(Expense.amount).alias('sum'),
-                                    Category.name, Expense.payment_type, Expense.additional_info)
-                            .join(Category)
-                            .where((Expense.time_creating.truncate('month') == today_month)
-                                   & (Category.is_additional_info_needed == True))
-                            .group_by(Expense.category_id, Category.name, Expense.payment_type, Expense.additional_info)
-                            .order_by(Expense.category_id))
-
-    if not expense_detail_query:
-        return "There's none such expense in this month"
-
-    rows = []
-    for row in expense_detail_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.name}' category "
-                    f"with payment by {row.payment_type}, "
-                    f"describing: {row.additional_info}. ")
-
-    answer_message = "Detail this month expenses: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple month statistic: /month \n"
-                       "Detail week statistic: /week_detail")
-    return answer_message
+    today_month = _get_today_truncated_to_month()
+    return try_get_detail_statistic('month', today_month)
 
 
 def get_year_sum_statistic() -> str:
     """ Get statistic of this year expenses. """
-    today = get_today()
-    today_year = datetime(year=today.year, month=1, day=1)
+    today_year = _get_today_truncated_to_year()
 
     expense_sum_query = (Expense
                          .select(fn.SUM(Expense.amount).alias('sum'))
@@ -358,8 +305,7 @@ def get_year_sum_statistic() -> str:
 
 def get_year_statistic_by_category() -> str:
     """ Get statistic of this year expenses grouped by category and payment type. """
-    today = get_today()
-    today_year = datetime(year=today.year, month=1, day=1)
+    today_year = _get_today_truncated_to_year()
 
     stat_category_query = (Expense
                            .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
@@ -386,8 +332,7 @@ def get_year_statistic_by_category() -> str:
 
 def get_year_statistic_by_type() -> str:
     """ Get statistic of this year expenses grouped by type of category and payment type. """
-    today = get_today()
-    today_year = datetime(year=today.year, month=1, day=1)
+    today_year = _get_today_truncated_to_year()
 
     stat_type_query = (Expense
                        .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
@@ -433,3 +378,87 @@ def _get_monthly_limit(type_name: str) -> Decimal:
     """ Return monthly limit by type name"""
     budget = _get_budget(type_name)
     return budget[0].monthly_limit
+
+
+def _get_today_truncated_to_date() -> date:
+    today = get_today_now().date()
+    return today
+
+
+def _get_today_truncated_to_week() -> date:
+    today = _get_today_truncated_to_date()
+    today_iso_week = date.fromisocalendar(year=today.isocalendar()[0], week=today.isocalendar()[1], day=1)
+    return today_iso_week
+
+
+def _get_today_truncated_to_month() -> date:
+    today = _get_today_truncated_to_date()
+    today_month = date(year=today.year, month=today.month, day=1)
+    return today_month
+
+
+def _get_today_truncated_to_year() -> date:
+    today = _get_today_truncated_to_date()
+    today_year = date(year=today.year, month=1, day=1)
+    return today_year
+
+
+def try_get_detail_statistic(period_name: str, period_date: date) -> str:
+    try:
+        query = try_get_expense_detail_query(period_name, period_date)
+    except QueryIsEmpty as e:
+        answer_message = f"There's none such expense in this {period_name}"
+        print(str(e))
+    else:
+        answer_message = get_formatted_detail_answer(query, period_name)
+    finally:
+        return answer_message
+
+
+def try_get_expense_detail_query(period_name: str, period_date: date):
+    result = get_expense_detail_query(period_name, period_date)
+    if result:
+        return result
+    else:
+        raise QueryIsEmpty(f"Expense row doesn't exist. period_name: {period_name}, period_date: {period_date}. ")
+
+
+def get_expense_detail_query(period_name: str, period_date: date):
+    expense_detail_query = (Expense
+                            .select(fn.SUM(Expense.amount).alias('sum'),
+                                    Category.name, Expense.payment_type, Expense.additional_info)
+                            .join(Category)
+                            .where((Expense.time_creating.truncate(period_name) == period_date)
+                                   & (Category.is_additional_info_needed is True))
+                            .group_by(Expense.category_id, Category.name, Expense.payment_type, Expense.additional_info)
+                            .order_by(Expense.category_id))
+    return expense_detail_query
+
+
+def get_formatted_detail_answer(query, period_name: str) -> str:
+    rows = get_detail_rows(query)
+    next_period_name = get_next_detail_period(period_name)
+
+    answer_message = f"Detail this {period_name} expenses: \n\n# "
+    answer_message = answer_message + "\n\n# ".join(rows)
+    answer_message += (f"\n\nSimple {period_name} statistic: /{period_name} \n"
+                       f"Detail {next_period_name} statistic: /{next_period_name}_detail")
+    return answer_message
+
+
+def get_detail_rows(query) -> List[str]:
+    rows = []
+    for row in query:
+        rows.append(f"{row.sum} \u20BD "
+                    f"to '{row.category_id.name}' category "
+                    f"with payment by {row.payment_type}, "
+                    f"describing: {row.additional_info}. ")
+    return rows
+
+
+def get_next_detail_period(period: str) -> str:
+    if period == 'week':
+        next_period = 'month'
+    else:
+        next_period = 'week'
+    return next_period

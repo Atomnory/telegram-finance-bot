@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional
 from utils.exceptions import NotCorrectMessage
 import re
-from services.service import get_today, get_category_by_name
+from services.service import get_today_now, get_category_by_name
 from datetime import datetime
 from decimal import *
 from models import Category, Expense
@@ -58,7 +58,7 @@ def add_expense(raw_message: str) -> str:
             raise NotCorrectMessage('This category is needed additional info')
 
     insert_expense(amount=parsed_message.amount,
-                   date=get_today(),
+                   date=get_today_now(),
                    category_id=category_obj.id,
                    payment=payment_type_result,
                    add_info=additional_info,
