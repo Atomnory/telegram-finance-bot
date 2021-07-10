@@ -4,7 +4,7 @@ from datetime import date
 from typing import List
 from models import TypeofCategory, Budget, Category, Expense
 from services.service import get_today_now
-from utils.exceptions import QueryIsEmpty
+from utils.exceptions import QueryIsEmpty, InvalidPeriod
 
 
 def get_today_sum_statistic() -> str:
@@ -457,8 +457,27 @@ def get_detail_rows(query) -> List[str]:
 
 
 def get_next_detail_period(period: str) -> str:
+    """ Func is using to navigating in chat by command. """
     if period == 'week':
         next_period = 'month'
-    else:
+    elif period == 'month':
         next_period = 'week'
+    else:
+        raise InvalidPeriod("get_next_detail_period accept only week and month periods. ")
     return next_period
+
+
+def get_next_period(period: str) -> str:
+    """ Func is using to navigating in chat by command. """
+    if period == 'day':
+        next_period = 'week'
+    elif period == 'week':
+        next_period = 'month'
+    elif period == 'month':
+        next_period = 'year'
+    elif period == 'year':
+        next_period = 'day'
+    else:
+        raise InvalidPeriod("get_detail_period accept only day, week, month and year periods. ")
+    return next_period
+

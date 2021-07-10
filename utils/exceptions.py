@@ -34,3 +34,10 @@ class QueryIsEmpty(Exception):
         Selecting query return None.
     """
     pass
+
+
+class InvalidPeriod(Exception):
+    """
+        Trying to get access to invalid period of date.
+    """
+    pass
