@@ -1,6 +1,6 @@
 import datetime
 from pytz import timezone
-from models import TypeofCategory, Category, FixedPrice
+from models import TypeofCategory, Category
 from typing import List
 
 
@@ -124,7 +124,7 @@ def is_additional_info_needed(category_name: str) -> bool:
 def get_fixed_price_categories_name() -> List[str]:
     """ Get list with name of every category which has fixed price. """
     result = []
-    for row in Category.select().join(FixedPrice, on=(Category.id == FixedPrice.category_id)):
+    for row in Category.select().where(Category.fixed_price.is_null(False)):
         result.append(row.name)
     return result
 
@@ -132,5 +132,5 @@ def get_fixed_price_categories_name() -> List[str]:
 # TODO: refact get() to get_by_id()
 def get_category_price_by_id(category_id: int) -> int:
     """ Get integer fixed price of category. """
-    fixed_price_obj = FixedPrice.get(FixedPrice.category_id == category_id)
-    return fixed_price_obj.price
+    category = Category.get_by_id(category_id)
+    return category.fixed_price

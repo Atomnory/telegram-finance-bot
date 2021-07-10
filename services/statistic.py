@@ -2,7 +2,7 @@ from playhouse.postgres_ext import fn
 from decimal import Decimal
 from datetime import date
 from typing import List
-from models import TypeofCategory, Budget, Category, Expense
+from models import TypeofCategory, Category, Expense
 from services.service import get_today_now
 from utils.exceptions import QueryIsEmpty, InvalidPeriod
 
@@ -101,12 +101,12 @@ def get_week_sum_statistic() -> str:
                 f"Month statistic: /month")
 
     sum_grocery_query = (Expense
-                        .select(fn.SUM(Expense.amount).alias('sum'), Budget.weekly_limit)
+                        .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.weekly_limit)
                         .join(Category)
                         .join(TypeofCategory)
-                        .join(Budget)
-                        .where(Expense.time_creating.truncate('week') == today_iso_week)
-                        .group_by(Budget.weekly_limit).dicts())
+                        .where((Expense.time_creating.truncate('week') == today_iso_week) &
+                               (TypeofCategory.weekly_limit.is_null(False)))
+                        .group_by(TypeofCategory.weekly_limit).dicts())
 
     # Return sum of all week groceries expenses or 0.00 if that expenses doesn't exist
     sum_grocery_expenses = sum_grocery_query[0]['sum'] if sum_grocery_query else _get_quantize_zero_decimal()
@@ -194,12 +194,12 @@ def get_month_sum_statistic() -> str:
                 f"Year statistic: /year")
 
     sum_grocery_query = (Expense
-                         .select(fn.SUM(Expense.amount).alias('sum'), Budget.monthly_limit)
+                         .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.monthly_limit)
                          .join(Category)
                          .join(TypeofCategory)
-                         .join(Budget)
-                         .where(Expense.time_creating.truncate('month') == today_month)
-                         .group_by(Budget.monthly_limit).dicts())
+                         .where((Expense.time_creating.truncate('month') == today_month) &
+                                (TypeofCategory.monthly_limit.is_null(False)))
+                         .group_by(TypeofCategory.monthly_limit).dicts())
 
     # Return sum of all month groceries expenses or 0.00 if that expenses doesn't exist
     sum_grocery_expenses = sum_grocery_query[0]['sum'] if sum_grocery_query else _get_quantize_zero_decimal()
@@ -363,21 +363,14 @@ def _get_quantize_zero_decimal() -> Decimal:
     return Decimal(0.00).quantize(Decimal('1.11'))
 
 
-def _get_budget(type_name: str) -> Budget:
-    """ Return budget instance by type_name. """
-    return Budget.select().join(TypeofCategory).where(TypeofCategory.name == type_name)
-
-
 def _get_weekly_limit(type_name: str) -> Decimal:
-    """ Return weekly limit by type name"""
-    budget = _get_budget(type_name)
-    return budget[0].weekly_limit
+    type_category = TypeofCategory.get(TypeofCategory.name == type_name)
+    return type_category.weekly_limit
 
 
 def _get_monthly_limit(type_name: str) -> Decimal:
-    """ Return monthly limit by type name"""
-    budget = _get_budget(type_name)
-    return budget[0].monthly_limit
+    type_category = TypeofCategory.get(TypeofCategory.name == type_name)
+    return type_category.monthly_limit
 
 
 def _get_today_truncated_to_date() -> date:
