@@ -7,6 +7,7 @@ from services.service import get_today_now
 from utils.exceptions import QueryIsEmpty, InvalidPeriod
 
 
+# TODO: create base class Statistic and derived classes DayStatistic, WeekStatistic, MonthStatistic, YearStatistic
 def get_today_sum_statistic() -> str:
     """ Get statistic of sum today expenses. """
     today = _get_today_truncated_to_date()
@@ -16,54 +17,13 @@ def get_today_sum_statistic() -> str:
 def get_today_statistic_by_category() -> str:
     """ Get statistic of today expenses grouped by category and payment type. """
     today = _get_today_truncated_to_date()
-    stat_category_query = (Expense
-                           .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
-                           .join(Category)
-                           .where(Expense.time_creating.truncate('day') == today)
-                           .group_by(Expense.category_id, Category.name, Expense.payment_type)
-                           .order_by(Expense.category_id))
-
-    if not stat_category_query:
-        return "There's none any expense today"
-
-    rows = []
-    for row in stat_category_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.name}' category "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "Today expenses by category: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple today statistic: /day \n"
-                       "Today statistic by type: /day_type \n"
-                       "Week statistic by category: /week_category")
-    return answer_message
+    return try_get_statistic_by_category('day', today)
 
 
 def get_today_statistic_by_type() -> str:
     """ Get statistic of today expenses grouped by type of category and payment type. """
     today = _get_today_truncated_to_date()
-    stat_type_query = (Expense
-                       .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
-                       .join(Category)
-                       .join(TypeofCategory)
-                       .where(Expense.time_creating.truncate('day') == today)
-                       .group_by(TypeofCategory.id, TypeofCategory.name, Expense.payment_type)
-                       .order_by(TypeofCategory.id))
-
-    if not stat_type_query:
-        return "There's none any expense today"
-
-    rows = []
-    for row in stat_type_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.type_id.name}' type "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "Today expenses by type: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple today statistic: /day \n"
-                       "Today statistic by category: /day_category \n"
-                       "Week statistic by type: /week_type")
-    return answer_message
+    return try_get_statistic_by_type('day', today)
 
 
 def get_week_sum_statistic() -> str:
@@ -75,56 +35,13 @@ def get_week_sum_statistic() -> str:
 def get_week_statistic_by_category() -> str:
     """ Get statistic of this ISO week expenses grouped by category and payment type. """
     today_iso_week = _get_today_truncated_to_week()
-
-    expense_category_query = (Expense
-                              .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
-                              .join(Category)
-                              .where(Expense.time_creating.truncate('week') == today_iso_week)
-                              .group_by(Expense.category_id, Category.name, Expense.payment_type)
-                              .order_by(Expense.category_id))
-
-    if not expense_category_query:
-        return "There's none any expense in this week"
-
-    rows = []
-    for row in expense_category_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.name}' category "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "This week expenses by category: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple week statistic: /week \n"
-                       "Week statistic by type: /week_type \n"
-                       "Month statistic by category: /month_category")
-    return answer_message
+    return try_get_statistic_by_category('week', today_iso_week)
 
 
 def get_week_statistic_by_type() -> str:
     """ Get statistic of this ISO week expenses grouped by type of category and payment type. """
     today_iso_week = _get_today_truncated_to_week()
-
-    expense_type_query = (Expense
-                        .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
-                        .join(Category)
-                        .join(TypeofCategory)
-                        .where(Expense.time_creating.truncate('week') == today_iso_week)
-                        .group_by(TypeofCategory.id, TypeofCategory.name, Expense.payment_type)
-                        .order_by(TypeofCategory.id))
-
-    if not expense_type_query:
-        return "There's none any expense in this week"
-
-    rows = []
-    for row in expense_type_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.type_id.name}' type "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "This week expenses by type: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple week statistic: /week \n"
-                       "Week statistic by category: /week_category \n"
-                       "Month statistic by type: /month_type")
-    return answer_message
+    return try_get_statistic_by_type('week', today_iso_week)
 
 
 def get_detail_week_statistic() -> str:
@@ -142,56 +59,13 @@ def get_month_sum_statistic() -> str:
 def get_month_statistic_by_category() -> str:
     """ Get statistic of this month expenses grouped by category and payment type. """
     today_month = _get_today_truncated_to_month()
-
-    expense_category_query = (Expense
-                              .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
-                              .join(Category)
-                              .where(Expense.time_creating.truncate('month') == today_month)
-                              .group_by(Expense.category_id, Category.name, Expense.payment_type)
-                              .order_by(Expense.category_id))
-
-    if not expense_category_query:
-        return "There's none any expense in this month"
-
-    rows = []
-    for row in expense_category_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.name}' category "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "This month expenses by category: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple month statistic: /month \n"
-                       "Month statistic by type: /month_type \n"
-                       "Year statistic by category: /year_category")
-    return answer_message
+    return try_get_statistic_by_category('month', today_month)
 
 
 def get_month_statistic_by_type() -> str:
     """ Get statistic of this month expenses grouped by type of category and payment type. """
     today_month = _get_today_truncated_to_month()
-
-    expense_type_query = (Expense
-                          .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
-                          .join(Category)
-                          .join(TypeofCategory)
-                          .where(Expense.time_creating.truncate('month') == today_month)
-                          .group_by(TypeofCategory.id, TypeofCategory.name, Expense.payment_type)
-                          .order_by(TypeofCategory.id))
-
-    if not expense_type_query:
-        return "There's none any expense in this month"
-
-    rows = []
-    for row in expense_type_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.type_id.name}' type "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "This month expenses by type: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple month statistic: /month \n"
-                       "Month statistic by category: /month_category \n"
-                       "Year statistic by type: /year_type")
-    return answer_message
+    return try_get_statistic_by_type('month', today_month)
 
 
 def get_detail_month_statistic() -> str:
@@ -209,56 +83,13 @@ def get_year_sum_statistic() -> str:
 def get_year_statistic_by_category() -> str:
     """ Get statistic of this year expenses grouped by category and payment type. """
     today_year = _get_today_truncated_to_year()
-
-    stat_category_query = (Expense
-                           .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
-                           .join(Category)
-                           .where(Expense.time_creating.truncate('year') == today_year)
-                           .group_by(Expense.category_id, Category.name, Expense.payment_type)
-                           .order_by(Expense.category_id))
-
-    if not stat_category_query:
-        return "There's none any expense in this year"
-
-    rows = []
-    for row in stat_category_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.name}' category "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "This year expenses by category: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple year statistic: /year \n"
-                       "Year statistic by type: /year_type \n"
-                       "Day statistic by category: /day_category")
-    return answer_message
+    return try_get_statistic_by_category('year', today_year)
 
 
 def get_year_statistic_by_type() -> str:
     """ Get statistic of this year expenses grouped by type of category and payment type. """
     today_year = _get_today_truncated_to_year()
-
-    stat_type_query = (Expense
-                       .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
-                       .join(Category)
-                       .join(TypeofCategory)
-                       .where(Expense.time_creating.truncate('year') == today_year)
-                       .group_by(TypeofCategory.id, TypeofCategory.name, Expense.payment_type)
-                       .order_by(TypeofCategory.id))
-
-    if not stat_type_query:
-        return "There's none any expense in this year"
-
-    rows = []
-    for row in stat_type_query:
-        rows.append(f"{row.sum} \u20BD "
-                    f"to '{row.category_id.type_id.name}' type "
-                    f"with payment by {row.payment_type}. ")
-
-    answer_message = "This year expenses by type: \n\n# " + "\n\n# ".join(rows)
-    answer_message += ("\n\nSimple year statistic: /year \n"
-                       "Year statistic by category: /year_category \n"
-                       "Day statistic by type: /day_type")
-    return answer_message
+    return try_get_statistic_by_type('year', today_year)
 
 
 def _get_quantize_zero_decimal() -> Decimal:
@@ -314,14 +145,14 @@ def select_groceries_sum_query(period_name: str, period: date) -> Expense:
 
 def get_formatted_answer_sum_error(error: Exception, period_name: str) -> str:
     print(str(error))
-    next_period_name = get_next_period(period_name)
+    next_period_name = get_next_period_name(period_name)
     answer_message = (f"There's none any expense in this {period_name} \n\n"
                       f"{next_period_name.title()} statistic: /{next_period_name}")
     return answer_message
 
 
 def get_formatted_answer_sum(expense_sum, groceries_sum, period_name: str) -> str:
-    next_period_name = get_next_period(period_name)
+    next_period_name = get_next_period_name(period_name)
 
     answer_message = (f"This {period_name} expenses: \n\n"
                       f"All: {expense_sum} \u20BD \n"
@@ -385,7 +216,7 @@ def select_groceries_sum_with_monthly_limit_query(period_name: str, period: date
 
 
 def get_formatted_answer_sum_with_limit(expense_sum, groceries_sum_and_limit, period_name: str) -> str:
-    next_period_name = get_next_period(period_name)
+    next_period_name = get_next_period_name(period_name)
     grocery_sum, grocery_limit = groceries_sum_and_limit
 
     answer_message = (f"This {period_name} expenses: \n\n"
@@ -395,6 +226,123 @@ def get_formatted_answer_sum_with_limit(expense_sum, groceries_sum_and_limit, pe
                       f"Detail {period_name} statistic: /{period_name}_detail \n"
                       f"{next_period_name.title()} statistic: /{next_period_name}")
     return answer_message
+
+
+def try_get_statistic_by_category(period_name: str, period: date) -> str:
+    try:
+        expense_query = get_statistic_by_category(period_name, period)
+    except QueryIsEmpty as e:
+        answer_message = get_formatted_answer_by_category_error(e, period_name)
+    else:
+        answer_message = get_formatted_answer_by_category(expense_query, period_name)
+    finally:
+        return answer_message
+
+
+def get_statistic_by_category(period_name: str, period: date):
+    query = select_categories_query(period_name, period)
+    if query:
+        return query
+    else:
+        raise QueryIsEmpty(f"Categories row doesn't exist. period_name: {period_name}, period_date: {period}. ")
+
+
+def select_categories_query(period_name: str, period: date):
+    stat_category_query = (Expense
+                           .select(fn.SUM(Expense.amount).alias('sum'), Category.name, Expense.payment_type)
+                           .join(Category)
+                           .where(Expense.time_creating.truncate(period_name) == period)
+                           .group_by(Expense.category_id, Category.name, Expense.payment_type)
+                           .order_by(Expense.category_id))
+    return stat_category_query
+
+
+def get_formatted_answer_by_category_error(error: Exception, period_name: str) -> str:
+    print(str(error))
+    next_period_name = get_next_period_name(period_name)
+    answer_message = (f"There's none any expense in this {period_name} \n\n"
+                      f"{next_period_name.title()} statistic by category: /{next_period_name}_category")
+    return answer_message
+
+
+def get_formatted_answer_by_category(query, period_name: str) -> str:
+    rows = get_formatted_categories_rows(query)
+    next_period_name = get_next_period_name(period_name)
+
+    answer_message = f"This {period_name} expenses by category: \n\n# "
+    answer_message += "\n\n# ".join(rows)
+    answer_message += (f"\n\n{period_name.title()} sum statistic: /{period_name} \n"
+                       f"{period_name.title()} statistic by type: /{period_name}_type \n"
+                       f"{next_period_name.title()} statistic by category: /{next_period_name}_category")
+    return answer_message
+
+
+def get_formatted_categories_rows(query) -> List[str]:
+    rows = []
+    for row in query:
+        rows.append(f"{row.sum} \u20BD "
+                    f"to '{row.category_id.name}' category "
+                    f"with payment by {row.payment_type}. ")
+    return rows
+
+
+def try_get_statistic_by_type(period_name: str, period: date) -> str:
+    try:
+        expense_query = get_statistic_by_type(period_name, period)
+    except QueryIsEmpty as e:
+        answer_message = get_formatted_answer_by_type_error(e, period_name)
+    else:
+        answer_message = get_formatted_answer_by_type(expense_query, period_name)
+    finally:
+        return answer_message
+
+
+def get_statistic_by_type(period_name: str, period: date):
+    query = select_types_query(period_name, period)
+    if query:
+        return query
+    else:
+        raise QueryIsEmpty(f"Types row doesn't exist. period_name: {period_name}, period_date: {period}. ")
+
+
+def select_types_query(period_name: str, period: date):
+    stat_type_query = (Expense
+                       .select(fn.SUM(Expense.amount).alias('sum'), TypeofCategory.name, Expense.payment_type)
+                       .join(Category)
+                       .join(TypeofCategory)
+                       .where(Expense.time_creating.truncate(period_name) == period)
+                       .group_by(TypeofCategory.id, TypeofCategory.name, Expense.payment_type)
+                       .order_by(TypeofCategory.id))
+    return stat_type_query
+
+
+def get_formatted_answer_by_type_error(error: Exception, period_name: str) -> str:
+    print(str(error))
+    next_period_name = get_next_period_name(period_name)
+    answer_message = (f"There's none any expense in this {period_name} \n\n"
+                      f"{next_period_name.title()} statistic by type: /{next_period_name}_type")
+    return answer_message
+
+
+def get_formatted_answer_by_type(query, period_name: str) -> str:
+    rows = get_formatted_types_rows(query)
+    next_period_name = get_next_period_name(period_name)
+
+    answer_message = f"This {period_name} expenses by type: \n\n# "
+    answer_message += "\n\n# ".join(rows)
+    answer_message += (f"\n\n{period_name.title()} sum statistic: /{period_name} \n"
+                       f"{period_name.title()} statistic by category: /{period_name}_category \n"
+                       f"{next_period_name.title()} statistic by type: /{next_period_name}_type")
+    return answer_message
+
+
+def get_formatted_types_rows(query) -> List[str]:
+    rows = []
+    for row in query:
+        rows.append(f"{row.sum} \u20BD "
+                    f"to '{row.category_id.type_id.name}' type "
+                    f"with payment by {row.payment_type}. ")
+    return rows
 
 
 def try_get_detail_statistic(period_name: str, period: date) -> str:
@@ -435,17 +383,17 @@ def get_formatted_answer_detail_error(error: Exception, period_name: str) -> str
 
 
 def get_formatted_answer_detail(query, period_name: str) -> str:
-    rows = get_detail_rows(query)
-    next_period_name = get_next_detail_period(period_name)
+    rows = get_formatted_detail_rows(query)
+    next_period_name = get_next_detail_period_name(period_name)
 
     answer_message = f"Detail this {period_name} expenses: \n\n# "
-    answer_message = answer_message + "\n\n# ".join(rows)
-    answer_message += (f"\n\nSimple {period_name} statistic: /{period_name} \n"
+    answer_message += "\n\n# ".join(rows)
+    answer_message += (f"\n\n{period_name.title()} sum statistic: /{period_name} \n"
                        f"Detail {next_period_name} statistic: /{next_period_name}_detail")
     return answer_message
 
 
-def get_detail_rows(query) -> List[str]:
+def get_formatted_detail_rows(query) -> List[str]:
     rows = []
     for row in query:
         rows.append(f"{row.sum} \u20BD "
@@ -455,7 +403,7 @@ def get_detail_rows(query) -> List[str]:
     return rows
 
 
-def get_next_detail_period(period_name: str) -> str:
+def get_next_detail_period_name(period_name: str) -> str:
     """ Func is using to navigating in chat by command. """
     if period_name == 'week':
         next_period_name = 'month'
@@ -466,7 +414,7 @@ def get_next_detail_period(period_name: str) -> str:
     return next_period_name
 
 
-def get_next_period(period_name: str) -> str:
+def get_next_period_name(period_name: str) -> str:
     """ Func is using to navigating in chat by command. """
     if period_name == 'day':
         next_period_name = 'week'
