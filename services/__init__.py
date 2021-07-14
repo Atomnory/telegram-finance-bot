@@ -1,3 +1,3 @@
 from . import expense
 from . import service
-from . import statistic
+from . import statistics

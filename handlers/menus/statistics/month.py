@@ -1,28 +1,27 @@
 from loader import dp
 from aiogram.types import Message
-from services.statistic import get_month_sum_statistic, get_month_statistic_by_category
-from services.statistic import get_month_statistic_by_type, get_detail_month_statistic
+from services.statistics.monthstatistic import MonthStatistic
 
 
 @dp.message_handler(commands=['month'])
 async def month_statistic(message: Message):
-    answer_message = get_month_sum_statistic()
+    answer_message = MonthStatistic().get_sum()
     await message.answer(answer_message)
 
 
 @dp.message_handler(commands=['month_category'])
 async def month_statistic_by_category(message: Message):
-    answer_message = get_month_statistic_by_category()
+    answer_message = MonthStatistic().get_by_category()
     await message.answer(answer_message)
 
 
 @dp.message_handler(commands=['month_type'])
 async def month_statistic_by_type(message: Message):
-    answer_message = get_month_statistic_by_type()
+    answer_message = MonthStatistic().get_by_type()
     await message.answer(answer_message)
 
 
 @dp.message_handler(commands=['month_detail'])
 async def month_statistic_detail(message: Message):
-    answer_message = get_detail_month_statistic()
+    answer_message = MonthStatistic().get_with_detail()
     await message.answer(answer_message)
