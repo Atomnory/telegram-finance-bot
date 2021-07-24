@@ -5,6 +5,7 @@ from utils.exceptions import QueryIsEmpty
 from .statisticformatter import StatisticFormatter
 
 
+# TODO: change main calling class from Statistic to StatisticFormatter
 class Statistic:
     def __init__(self):
         self._period = None
@@ -16,50 +17,17 @@ class Statistic:
 
     def get_sum(self):
         try:
-            expense_sum = self.__get_sum_stat()
-            groceries_sum = self.__get_sum_groceries()
+            expense_sum = self._get_sum_stat()
+            groceries_sum = self._get_sum_groceries()
         except QueryIsEmpty as e:
             print(str(e))
-            self._formatter.form_answer_sum_error()
+            self._formatter.format_answer_sum_error()
             return self._formatter.answer
         else:
-            self._formatter.form_answer_sum(expense_sum, groceries_sum)
+            self._formatter.format_answer_sum(expense_sum, groceries_sum)
             return self._formatter.answer
 
-    def get_by_category(self):
-        try:
-            expense_query = self.__get_statistic_by_category()
-        except QueryIsEmpty as e:
-            print(str(e))
-            self._formatter.form_answer_by_category_error()
-            return self._formatter.answer
-        else:
-            self._formatter.form_answer_by_category(expense_query)
-            return self._formatter.answer
-
-    def get_by_type(self):
-        try:
-            expense_query = self.__get_statistic_by_type()
-        except QueryIsEmpty as e:
-            print(str(e))
-            self._formatter.form_answer_by_type_error()
-            return self._formatter.answer
-        else:
-            self._formatter.form_answer_by_type(expense_query)
-            return self._formatter.answer
-
-    def get_with_detail(self):
-        try:
-            query = self.__get_expense_detail_query()
-        except QueryIsEmpty as e:
-            print(str(e))
-            self._formatter.formatted_answer_detail_error()
-            return self._formatter.answer
-        else:
-            self._formatter.formatted_answer_detail(query)
-            return self._formatter.answer
-
-    def __get_sum_stat(self):
+    def _get_sum_stat(self):
         query = self.__select_sum_query()
         if query[0].sum:
             return query[0].sum
@@ -73,13 +41,18 @@ class Statistic:
                              .where(Expense.time_creating.truncate(self._formatter.period_name) == self._period))
         return expense_sum_query
 
-    def __get_sum_groceries(self):
+    def _get_sum_groceries(self):
         # Return sum of all year groceries expenses or 0.00 if that expenses doesn't exist
         query = self.__select_groceries_sum_query()
         if query[0].sum:
             return query[0].sum
         else:
-            return self.__get_quantize_zero_decimal()
+            return self._get_zero_decimal()
+
+    @staticmethod
+    def _get_zero_decimal() -> Decimal:
+        """ Using for display '0' with trailing zeros '0.00'. """
+        return Decimal('0.00')
 
     def __select_groceries_sum_query(self) -> Expense:
         groceries_sum_query = (Expense
@@ -90,32 +63,16 @@ class Statistic:
                                       & (Expense.time_creating.truncate(self._formatter.period_name) == self._period)))
         return groceries_sum_query
 
-    # TODO: is should this func will be implemented in derived class as overriding func of try_get_sum_statistic?
-    def _try_get_sum_with_limit_statistic(self) -> str:
+    def get_by_category(self):
         try:
-            expense_sum = self.__get_sum_stat()
-            groceries_sum_and_limit = self.__get_sum_groceries_and_limit()
+            expense_query = self.__get_statistic_by_category()
         except QueryIsEmpty as e:
             print(str(e))
-            self._formatter.form_answer_sum_error()
+            self._formatter.format_answer_by_category_error()
             return self._formatter.answer
         else:
-            self._formatter.form_answer_sum_with_limit(expense_sum, groceries_sum_and_limit)
+            self._formatter.format_answer_by_category(expense_query)
             return self._formatter.answer
-
-    def __get_sum_groceries_and_limit(self):
-        # Return sum of all year groceries expenses or 0.00 if that expenses doesn't exist
-        query = self._select_groceries_sum_with_limit_query()
-        if query:
-            return query[0][0], query[0][1]
-        else:
-            return self.__get_quantize_zero_decimal(), self._get_period_limit('Groceries')
-
-    def _select_groceries_sum_with_limit_query(self):
-        pass
-
-    def _get_period_limit(self, type_name: str) -> Decimal:
-        pass
 
     def __get_statistic_by_category(self):
         query = self.__select_categories_query()
@@ -134,6 +91,17 @@ class Statistic:
                                .order_by(Expense.category_id))
         return stat_category_query
 
+    def get_by_type(self):
+        try:
+            expense_query = self.__get_statistic_by_type()
+        except QueryIsEmpty as e:
+            print(str(e))
+            self._formatter.format_answer_by_type_error()
+            return self._formatter.answer
+        else:
+            self._formatter.format_answer_by_type(expense_query)
+            return self._formatter.answer
+
     def __get_statistic_by_type(self):
         query = self.__select_types_query()
         if query:
@@ -151,6 +119,17 @@ class Statistic:
                            .group_by(TypeofCategory.id, TypeofCategory.name, Expense.payment_type)
                            .order_by(TypeofCategory.id))
         return stat_type_query
+
+    def get_with_detail(self):
+        try:
+            query = self.__get_expense_detail_query()
+        except QueryIsEmpty as e:
+            print(str(e))
+            self._formatter.format_answer_detail_error()
+            return self._formatter.answer
+        else:
+            self._formatter.format_answer_detail(query)
+            return self._formatter.answer
 
     def __get_expense_detail_query(self):
         result = self.__select_detail_query()
@@ -172,7 +151,29 @@ class Statistic:
                                 .order_by(Expense.category_id))
         return expense_detail_query
 
-    @staticmethod
-    def __get_quantize_zero_decimal() -> Decimal:
-        """ Using for display '0' with trailing zeros '0.00'. """
-        return Decimal(0.00).quantize(Decimal('1.11'))      # TODO: test: Decimal('0.00')
+    # is should this func will be implemented in derived class as overriding func of try_get_sum_statistic?
+    def _try_get_sum_with_limit_statistic(self) -> str:
+        try:
+            expense_sum = self._get_sum_stat()
+            groceries_sum_and_limit = self.__get_sum_groceries_and_limit()
+        except QueryIsEmpty as e:
+            print(str(e))
+            self._formatter.format_answer_sum_error()
+            return self._formatter.answer
+        else:
+            self._formatter.format_answer_sum_with_limit(expense_sum, groceries_sum_and_limit)
+            return self._formatter.answer
+
+    def __get_sum_groceries_and_limit(self):
+        # Return sum of all year groceries expenses or 0.00 if that expenses doesn't exist
+        query = self._select_groceries_sum_with_limit_query()
+        if query:
+            return query[0][0], query[0][1]
+        else:
+            return self._get_zero_decimal(), self._get_period_limit('Groceries')
+
+    def _select_groceries_sum_with_limit_query(self):
+        pass
+
+    def _get_period_limit(self, type_name: str) -> Decimal:
+        pass

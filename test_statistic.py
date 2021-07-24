@@ -1,55 +1,30 @@
 import pytest
-import datetime
-from services import statistics
-from utils import exceptions
+from services.statistics.statistic import Statistic
+from services.statistics.daystatistic import DayStatistic
+from services.statistics.weekstatistic import WeekStatistic
+from services.statistics.monthstatistic import MonthStatistic
+from services.statistics.yearstatistic import YearStatistic
+from db_test import create_test_db, init_test_db, delete_test_db
 
 
-class TestDateTruncating:
-    def test_return_today(self):
-        today = datetime.date.today()
-        assert today == statistics._get_today_truncated_to_date()
+@pytest.fixture()
+def db_env():
+    create_test_db()
+    init_test_db()
+
+    yield
+
+    delete_test_db()
 
 
-class TestGetNextPeriod:
-    def test_invalid_period(self):
-        with pytest.raises(exceptions.InvalidPeriod):
-            any_str = ''
-            statistics.get_next_period_name(any_str)
-    
-    def test_valid_period_day(self):
-        period = 'day'
-        next_period = 'week'
-        assert statistics.get_next_period_name(period) == next_period
-
-    def test_valid_period_week(self):
-        period = 'week'
-        next_period = 'month'
-        assert statistics.get_next_period_name(period) == next_period
-
-    def test_valid_period_month(self):
-        period = 'month'
-        next_period = 'year'
-        assert statistics.get_next_period_name(period) == next_period
-
-    def test_valid_period_year(self):
-        period = 'year'
-        next_period = 'day'
-        assert statistics.get_next_period_name(period) == next_period
+def test_get_quantize_zero_decimal():
+    stat = Statistic()
+    assert '0.00' == str(stat._get_zero_decimal())
 
 
-class TestGetNextDetailPeriod:
-    def test_invalid_period(self):
-        with pytest.raises(exceptions.InvalidPeriod):
-            any_str = 'day'
-            statistics.get_next_detail_period_name(any_str)
-
-    def test_valid_period_week(self):
-        period = 'week'
-        next_period = 'month'
-        assert statistics.get_next_detail_period_name(period) == next_period
-
-    def test_valid_period_month(self):
-        period = 'month'
-        next_period = 'week'
-        assert statistics.get_next_detail_period_name(period) == next_period
+@pytest.mark.skip(reason="I can create new db but i can't test it because models bind with original db.")
+def test_get_sum(db_env):
+    day = DayStatistic()
+    assert str(day._get_sum_stat()) == '325.00'
+    assert str(day._get_sum_groceries()) == '300.00'
 
