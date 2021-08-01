@@ -4,29 +4,29 @@ from services.statistics.statisticformatter import StatisticFormatter
 
 class TestStatisticFormatter:
     def test_next_period_name_day(self):
-        answer = (f"There's none any expense in this day \n\n"
-                f"Week statistic: /week")
+        answer = ("There's none any expense in this day \n\n"
+                "Week statistic: /week")
         sf = StatisticFormatter('day')
         sf.format_answer_sum_error()
         assert sf.answer == answer
 
     def test_next_period_name_week(self):
-        answer = (f"There's none any expense in this week \n\n"
-                f"Month statistic: /month")
+        answer = ("There's none any expense in this week \n\n"
+                "Month statistic: /month")
         sf = StatisticFormatter('week')
         sf.format_answer_sum_error()
         assert sf.answer == answer
 
     def test_next_period_name_month(self):
-        answer = (f"There's none any expense in this month \n\n"
-                f"Year statistic: /year")
+        answer = ("There's none any expense in this month \n\n"
+                "Year statistic: /year")
         sf = StatisticFormatter('month')
         sf.format_answer_sum_error()
         assert sf.answer == answer
 
     def test_next_period_name_year(self):
-        answer = (f"There's none any expense in this year \n\n"
-                f"Day statistic: /day")
+        answer = ("There's none any expense in this year \n\n"
+                "Day statistic: /day")
         sf = StatisticFormatter('year')
         sf.format_answer_sum_error()
         assert sf.answer == answer
@@ -42,17 +42,17 @@ class TestStatisticFormatter:
             sf.format_answer_detail_error()
 
     def test_next_detail_period_name_week(self):
-        answer = (f"There's none such expense in this week \n\n"
-                f"Month detail statistic: "
-                f"/month_detail")
+        answer = ("There's none such expense in this week \n\n"
+                "Month detail statistic: "
+                "/month_detail")
         sf = StatisticFormatter('week')
         sf.format_answer_detail_error()
         assert sf.answer == answer
 
     def test_next_detail_period_name_month(self):
-        answer = (f"There's none such expense in this month \n\n"
-                  f"Week detail statistic: "
-                  f"/week_detail")
+        answer = ("There's none such expense in this month \n\n"
+                  "Week detail statistic: "
+                  "/week_detail")
         sf = StatisticFormatter('month')
         sf.format_answer_detail_error()
         assert sf.answer == answer

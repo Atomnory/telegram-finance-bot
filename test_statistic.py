@@ -27,4 +27,3 @@ def test_get_sum(db_env):
     day = DayStatistic()
     assert str(day._get_sum_stat()) == '325.00'
     assert str(day._get_sum_groceries()) == '300.00'
-

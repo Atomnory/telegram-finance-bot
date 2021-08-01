@@ -9,4 +9,3 @@ class CreateExpense(StatesGroup):
     waiting_for_additional_info = State()
     waiting_for_amount = State()
     waiting_for_confirm = State()
-

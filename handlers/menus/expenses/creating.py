@@ -8,7 +8,6 @@ from services.service import get_list_all_types, get_type_id_by_type_name, get_c
 from services.service import get_type_name_by_id, get_fixed_price_categories_name, get_category_id_by_category_name
 from services.service import get_category_price_by_id, get_today_now
 from services.service import is_card_accepted, is_cash_accepted, is_additional_info_needed
-from services.expense import insert_expense
 from utils.exceptions import CategoryDoesNotExist
 # TODO: add Back handler and possibility to repeat step
 
@@ -213,12 +212,12 @@ async def finish_add_expense(message: Message, state: FSMContext):
     amount = data.get('amount')
     raw_message = ' '.join([str(amount), type_name, category_name,  payment, additional_info])
 
-    insert_expense(amount=amount,
-                   date=get_today_now(),
-                   category_id=get_category_id_by_category_name(category_name),
-                   payment=payment,
-                   add_info=additional_info,
-                   raw_text=raw_message)
+    # insert_expense(amount=amount,
+    #                date=get_today_now(),
+    #                category_id=get_category_id_by_category_name(category_name),
+    #                payment=payment,
+    #                add_info=additional_info,
+    #                raw_text=raw_message)
 
     await state.finish()
     answer_message = 'Expense was added. ' \
