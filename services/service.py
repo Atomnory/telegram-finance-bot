@@ -11,21 +11,14 @@ def get_today_now() -> datetime.datetime:
     return today
 
 
-# TODO: rename, refact result and append
-def get_all_types() -> str:
-    """ Get formatted string with name of all types. """
-    result = []
-    for row in TypeofCategory.select():
-        result.append(f" '{row.name}'. ")
-
+def get_format_types() -> str:
+    result = get_list_all_types()
     answer_message = "List of all Types: \n\n# " + "\n\n# ".join(result)
     answer_message += "\n\nList of Categories: /categories"
     return answer_message
 
 
-# TODO: rename, refact result and append
 def get_list_all_types() -> List[str]:
-    """ Get list with name of all types. """
     result = []
     for row in TypeofCategory.select():
         result.append(row.name)
@@ -34,7 +27,6 @@ def get_list_all_types() -> List[str]:
 
 # TODO: rename
 def get_all_categories() -> str:
-    """ Get formatted string with all categories. """
     result = []
     for row in Category.select():
         payment_type = ''
@@ -52,48 +44,24 @@ def get_all_categories() -> str:
     return answer_message
 
 
-def get_type_id_by_type_name(type_name: str) -> int:
-    """ Convert Type name in Type id. """
+def get_type_by_name(type_name: str) -> TypeofCategory:
     type_obj = TypeofCategory.get(TypeofCategory.name == type_name)
-    return type_obj.id
+    return type_obj
 
 
-def get_type_name_by_id(type_id: int) -> str:
-    """ Convert Type id in Type name. """
-    type_obj = TypeofCategory.get_by_id(type_id)
-    return type_obj.name
-
-
-# TODO: add alias support
-def get_category_id_by_category_name(category_name: str) -> int:
-    """ Convert Category name in Category id. """
-    category_obj = Category.get(Category.name == category_name)
-    return category_obj.id
-
-
-def get_category_name_by_id(category_id: int) -> str:
-    """ Convert Category id in Category name. """
-    category_obj = Category.get_by_id(category_id)
-    return category_obj.name
-
-
-# TODO: refact result and append
-def get_categories_name_by_type_id(type_id: int) -> List[str]:
-    """ Get list with all categories by type id. """
+def get_categories_name_by_type(type_obj: TypeofCategory) -> List[str]:
     result = []
-    for category in Category.select().where(Category.type_id == type_id):
+    for category in Category.select().where(Category.type_id == type_obj.id):
         result.append(category.name)
     return result
 
 
-# TODO: add alias support and other if error
+# TODO: add alias support
 def get_category_by_name(category_name: str) -> Category:
-    """ Return instance of Category by name. """
     return Category.get(Category.name == category_name)
 
 
 def get_category_by_name_or_other(category_name: str) -> Category:
-    """ Return instance of Category by name or instance of 'other' Category. """
     try:
         result = get_category_by_name(category_name)
     except Category.DoesNotExist as e:
@@ -102,35 +70,5 @@ def get_category_by_name_or_other(category_name: str) -> Category:
         return result
 
 
-def is_cash_accepted(category_name: str) -> bool:
-    """ Check does category accept cash. """
-    category_obj = Category.get(Category.name == category_name)
-    return category_obj.is_cash_accepted
-
-
-def is_card_accepted(category_name: str) -> bool:
-    """ Check does category accept card. """
-    category_obj = Category.get(Category.name == category_name)
-    return category_obj.is_card_accepted
-
-
-def is_additional_info_needed(category_name: str) -> bool:
-    """ Check does category need additional info. """
-    category_obj = Category.get(Category.name == category_name)
-    return category_obj.is_additional_info_needed
-
-
-# TODO: refact result and append
-def get_fixed_price_categories_name() -> List[str]:
-    """ Get list with name of every category which has fixed price. """
-    result = []
-    for row in Category.select().where(Category.fixed_price.is_null(False)):
-        result.append(row.name)
-    return result
-
-
-# TODO: refact get() to get_by_id()
-def get_category_price_by_id(category_id: int) -> int:
-    """ Get integer fixed price of category. """
-    category = Category.get_by_id(category_id)
-    return category.fixed_price
+def is_both_payment_type_accepted(category: Category) -> bool:
+    return category.accepted_payments_type == 'Both'

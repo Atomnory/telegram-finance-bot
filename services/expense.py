@@ -1,29 +1,37 @@
 from typing import Optional
 from models import Category, Expense
 from services.service import get_today_now
-from .expenses.message_parser import MessageParser
-from .expenses.expense_validator import ExpenseValidator
+from .expenses.message_parser import MessageParser, Message
+from .expenses.expense_validator import ExpenseValidatorByMessage, ExpenseValidatorByDict
 
 
 class ExpenseCreator:
     def __init__(self):
         self._parser = MessageParser()
         self._validator = None
-        self._parsed_message = None
         self._expense = None
 
     def parse_message_and_create_expense_if_valid(self, message: str) -> str:
         """ Return string with expense creating confirmation. """
-        self._parse(message)
-        self._validate()
+        parsed_message = self._parse(message)
+        self._validate_by_message(parsed_message)
         self._create()
         return self._get_answer_message()
 
-    def _parse(self, message: str):
-        self._parsed_message = self._parser.parse_from(message)
+    def create_expense_by_dict_if_valid(self, data: dict) -> None:
+        self._validate_by_dict(data)
+        self._create()
 
-    def _validate(self):
-        self._validator = ExpenseValidator(self._parsed_message)
+    def _parse(self, message: str) -> Message:
+        return self._parser.parse_from(message)
+
+    def _validate_by_message(self, message: Message):
+        self._validator = ExpenseValidatorByMessage(message)
+        if self._validator.is_valid():
+            self._expense = self._validator.expense
+
+    def _validate_by_dict(self, data: dict):
+        self._validator = ExpenseValidatorByDict(data)
         if self._validator.is_valid():
             self._expense = self._validator.expense
 
