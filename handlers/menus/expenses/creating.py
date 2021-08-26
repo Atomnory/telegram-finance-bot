@@ -11,15 +11,13 @@ from handlers.default import send_welcome
 from services.expense import ExpenseCreator
 # TODO: add Back handler and possibility to repeat step
 
-TYPES_OF_CATEGORY = get_list_all_types()
-
 
 @dp.message_handler(Text(equals=['Add']))
 async def start_add_expense(message: Message):
     answer_message = 'Choose type of expense: '
 
     reply_keyboard = ReplyKeyboardMarkup()
-    for name in TYPES_OF_CATEGORY:
+    for name in get_list_all_types():
         reply_keyboard.add(name)
     reply_keyboard.row('Cancel')
     await message.answer(answer_message, reply_markup=reply_keyboard)
@@ -37,16 +35,15 @@ async def cancel_add_expense(message: Message, state: FSMContext):
 @dp.message_handler(state=CreateExpense.waiting_for_type)
 async def choose_type(message: Message, state: FSMContext):
     type_by_user = message.text
-    if type_by_user in TYPES_OF_CATEGORY:
+    if type_by_user in get_list_all_types():
         type_obj = get_type_by_name(type_by_user)
-        types_categories_list = get_categories_name_by_type(type_obj)
 
         async with state.proxy() as data:
             data['type'] = type_obj
 
         answer_message = 'Choose category of expense: '
-        reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-        for name in types_categories_list:
+        reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)  # TODO: try without resize_keyboard
+        for name in get_categories_name_by_type(type_obj):
             reply_keyboard.add(name)
         reply_keyboard.add('Cancel')
 
@@ -62,9 +59,8 @@ async def choose_category_by_type(message: Message, state: FSMContext):
     category_name_by_user = message.text
     data = await state.get_data()
     type_obj = data.get('type')
-    types_categories = get_categories_name_by_type(type_obj)
 
-    if category_name_by_user in types_categories:
+    if category_name_by_user in get_categories_name_by_type(type_obj):
         category = get_category_by_name(category_name_by_user)
         async with state.proxy() as data:
             data['category'] = category
@@ -79,13 +75,24 @@ async def choose_category_by_type(message: Message, state: FSMContext):
         else:
             async with state.proxy() as data:
                 data['payment'] = category.accepted_payments_type
-
-            answer_message = f"Category '{category.name}' accepts only {category.accepted_payments_type} payment."
-            await message.answer(answer_message)
-            # TODO: Inner async func to skip step if category accept only one type of payment.
+            await skip_choose_payment_type(message, state)
     else:
         answer_invalid_message = 'That category does not exist. Try again '
         return await message.answer(answer_invalid_message)
+
+
+async def skip_choose_payment_type(message: Message, state: FSMContext):
+    data = await state.get_data()
+    category = data.get('category')
+
+    if category.is_additional_info_needed:
+        answer_message = 'Write additional info about expense: '
+        await message.answer(answer_message)
+        await CreateExpense.waiting_for_additional_info.set()
+    else:
+        async with state.proxy() as data:
+            data['additional_info'] = None
+        await skip_adding_additional_info(message, state)
 
 
 @dp.message_handler(state=CreateExpense.waiting_for_payment_type)
@@ -102,15 +109,31 @@ async def choose_payment_type(message: Message, state: FSMContext):
             answer_message = 'Write additional info about expense: '
             await message.answer(answer_message)
             await CreateExpense.waiting_for_additional_info.set()
-        else:                                   # TODO: test if delete
+        else:
             async with state.proxy() as data:
                 data['additional_info'] = None
-
-            # TODO: Inner async func to skip step if category accept only one type of payment.
-
+            await skip_adding_additional_info(message, state)
     else:
         answer_invalid_message = 'Such type of payment is not accepted. Try again '
         return await message.answer(answer_invalid_message)
+
+
+async def skip_adding_additional_info(message: Message, state: FSMContext):
+    data = await state.get_data()
+    category = data.get('category')
+
+    if category.fixed_price:
+        decimal_fixed_price = Decimal(category.fixed_price).quantize(Decimal('1.11'), rounding=ROUND_HALF_UP)
+        async with state.proxy() as data:
+            data['amount'] = decimal_fixed_price
+        await skip_add_amount(message, state)
+    else:
+        answer_message = 'Enter amount of expense: '
+        reply_keyboard = ReplyKeyboardMarkup()
+        reply_keyboard.add('Cancel')
+
+        await message.answer(answer_message, reply_markup=reply_keyboard)
+        await CreateExpense.waiting_for_amount.set()
 
 
 @dp.message_handler(state=CreateExpense.waiting_for_additional_info)
@@ -127,11 +150,7 @@ async def adding_additional_info(message: Message, state: FSMContext):
         decimal_fixed_price = Decimal(category.fixed_price).quantize(Decimal('1.11'), rounding=ROUND_HALF_UP)
         async with state.proxy() as data:
             data['amount'] = decimal_fixed_price
-
-        answer_message = f"Category has fixed price: {decimal_fixed_price} \u20BD. "
-        await message.answer(answer_message)
-        # TODO: inner func to skip step
-
+        await skip_add_amount(message, state)
     else:
         answer_message = 'Enter amount of expense: '
         reply_keyboard = ReplyKeyboardMarkup()
@@ -139,6 +158,16 @@ async def adding_additional_info(message: Message, state: FSMContext):
 
         await message.answer(answer_message, reply_markup=reply_keyboard)
         await CreateExpense.waiting_for_amount.set()
+
+
+async def skip_add_amount(message: Message, state: FSMContext):
+    data = await state.get_data()
+    answer_message = f"Do you want to add this expense?: \n" \
+                     f"{data.get('amount')} \u20BD for '{data.get('category').name}' with {data.get('payment')}"
+    reply_keyboard = ReplyKeyboardMarkup()
+    reply_keyboard.row('Confirm', 'Cancel')
+    await CreateExpense.waiting_for_confirm.set()
+    await message.answer(answer_message, reply_markup=reply_keyboard)
 
 
 @dp.message_handler(regexp='^\d+[,.]?\d*', state=CreateExpense.waiting_for_amount)
