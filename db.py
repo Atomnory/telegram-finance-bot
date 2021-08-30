@@ -1,8 +1,4 @@
-from playhouse.postgres_ext import PostgresqlExtDatabase
+from playhouse.db_url import connect
 from utils import config
 
-pg_db = PostgresqlExtDatabase(database=config.DATABASE,
-                              user=config.USER,
-                              password=config.PASSWORD,
-                              host=config.HOST,
-                              port=config.PORT)
+pg_db = connect(config.DATABASE_URL)
