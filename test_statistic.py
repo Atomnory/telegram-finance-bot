@@ -4,7 +4,7 @@ from services.statistics.daystatistic import DayStatistic
 from services.statistics.weekstatistic import WeekStatistic
 from services.statistics.monthstatistic import MonthStatistic
 from services.statistics.yearstatistic import YearStatistic
-from db_test import create_test_db, init_test_db, delete_test_db
+from db_for_test import create_test_db, init_test_db, delete_test_db
 
 
 @pytest.fixture()

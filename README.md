@@ -1,9 +1,7 @@
-Telegram бот для учёта расходов. Все расходы разделены на 25 категорий и 5 надкатегорий.
-
-Modified and extended version of original bot: https://github.com/alexey-goloburdin/telegram-finance-bot
+Telegram бот для учёта расходов. Все расходы разделены на 5 надкатегорий и 25 категорий.
 
 
-В переменные окружения надо добавить API токен бота и ID юзера.
+В переменные окружения необходимо добавить API токен бота и ID юзера.
 
 'TELEGRAM_API_TOKEN_PB' — API токен бота
 
@@ -11,7 +9,7 @@ Modified and extended version of original bot: https://github.com/alexey-golobur
 
 Переменные  окружения необходимые для работы базы данных.
 
-'DB_POSTGRES_TB_NAME' - название базы данных
+'DB_POSTGRES_TB_PEEWEE_NAME' - название базы данных
 
 'DB_POSTGRES_USER' - логин юзера для подключения к базе данных
 
@@ -20,7 +18,3 @@ Modified and extended version of original bot: https://github.com/alexey-golobur
 'DB_POSTGRES_HOST' - адрес хоста базы данных (по умолчанию для локального сервера - 127.0.0.1)
 
 'DB_POSTGRES_PORT' - порт хоста базы данных (по умолчанию для локального сервера - 5432)
-
-
-Roadmap:
-   * Finish reply keyboard buttons.
