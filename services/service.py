@@ -47,7 +47,6 @@ def get_categories_name_by_type(type_obj: TypeofCategory) -> List[str]:
     return result
 
 
-# TODO: add alias support
 def get_category_by_name(category_name: str) -> Category:
     return Category.get(Category.name == category_name)
 

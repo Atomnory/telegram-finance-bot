@@ -7,7 +7,7 @@ from db_table import inspect_db
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.API_TOKEN)
-storage = MemoryStorage()       # TODO: change memory storage to Redis
+storage = MemoryStorage()       # opportunity change MemoryStorage to Redis
 dp = Dispatcher(bot, storage=storage)
 dp.middleware.setup(AccessMiddleware(config.ACCESS_USER_ID))
 inspect_db()
